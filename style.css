@@ -172,18 +172,52 @@ button:active {
 }
 
 .cardStage {
+  position: relative;
   min-height: 0;
   display: grid;
   place-items: center;
   touch-action: none;
   perspective: 1000px;
+  overflow: hidden;
 }
 
 .card {
+  position: absolute;
   width: min(100%, 440px);
   min-height: 62vh;
   display: grid;
-  transition: transform 170ms ease, opacity 170ms ease;
+  transition:
+    transform 240ms cubic-bezier(.2,.75,.22,1),
+    opacity 220ms ease,
+    filter 220ms ease;
+  will-change: transform, opacity;
+}
+
+.activeCard {
+  z-index: 4;
+}
+
+.previewCard {
+  z-index: 2;
+  transform: translateY(28px) scale(0.955) rotate(0.5deg);
+  opacity: 0.62;
+  filter: saturate(0.75) brightness(0.92);
+  pointer-events: none;
+}
+
+.previewCard .cardPaper {
+  min-height: 58vh;
+  box-shadow:
+    inset 0 0 0 1px rgba(82, 48, 18, 0.06),
+    0 15px 38px rgba(22, 13, 6, 0.22);
+}
+
+.previewCard #nextCardText {
+  opacity: 0.58;
+}
+
+.previewCard .cardMeta {
+  display: none;
 }
 
 .cardPaper {
@@ -231,7 +265,8 @@ button:active {
   user-select: none;
 }
 
-#cardText {
+#cardText,
+#nextCardText {
   position: relative;
   z-index: 3;
   margin: 0;
@@ -258,7 +293,8 @@ button:active {
   align-content: center;
 }
 
-.v-center-bold #cardText {
+.v-center-bold #cardText,
+.v-center-bold #nextCardText {
   font-size: clamp(31px, 8.6vw, 48px);
   line-height: 1.05;
   letter-spacing: -0.045em;
@@ -281,7 +317,8 @@ button:active {
     linear-gradient(var(--paper), #fff4d8);
 }
 
-.v-small-note #cardText {
+.v-small-note #cardText,
+.v-small-note #nextCardText {
   font-family: "Trebuchet MS", Verdana, sans-serif;
   font-size: clamp(20px, 5.5vw, 30px);
   line-height: 1.32;
@@ -307,7 +344,8 @@ button:active {
     linear-gradient(#fff0ca, #f4e4bd);
 }
 
-.v-quote #cardText {
+.v-quote #cardText,
+.v-quote #nextCardText {
   font-size: clamp(26px, 7.3vw, 40px);
   line-height: 1.17;
   font-style: italic;
@@ -331,7 +369,8 @@ button:active {
     linear-gradient(var(--paper), #fff7e3);
 }
 
-.v-catalog #cardText {
+.v-catalog #cardText,
+.v-catalog #nextCardText {
   font-family: "Courier New", Courier, monospace;
   font-size: clamp(22px, 6.4vw, 34px);
   line-height: 1.18;
@@ -354,7 +393,8 @@ button:active {
     repeating-linear-gradient(#fff4d8 0 29px, rgba(112, 80, 44, 0.13) 30px);
 }
 
-.v-margin #cardText {
+.v-margin #cardText,
+.v-margin #nextCardText {
   font-family: "Palatino Linotype", Palatino, serif;
   font-size: clamp(23px, 6.8vw, 38px);
   line-height: 1.2;
@@ -380,7 +420,8 @@ button:active {
   border-radius: 10px 24px 16px 28px;
 }
 
-.v-scrap #cardText {
+.v-scrap #cardText,
+.v-scrap #nextCardText {
   font-family: "Arial Narrow", Arial, sans-serif;
   font-size: clamp(29px, 8vw, 45px);
   line-height: 1.02;
@@ -403,7 +444,8 @@ button:active {
     linear-gradient(#f6ead0, #e9d8b4);
 }
 
-.v-whisper #cardText {
+.v-whisper #cardText,
+.v-whisper #nextCardText {
   font-size: clamp(19px, 5.3vw, 29px);
   line-height: 1.38;
   max-width: 84%;
@@ -419,13 +461,13 @@ button:active {
 
 .actions {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
 }
 
 .actions button {
-  font-size: 13px;
-  padding: 12px 8px;
+  font-size: 12px;
+  padding: 12px 6px;
   background: rgba(255, 246, 225, 0.18);
   box-shadow: none;
 }
@@ -434,8 +476,15 @@ button:active {
   background: #b87936;
 }
 
+.actions button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Motion states */
+
 .flyUp {
-  transform: translateY(-120%) rotate(-2deg);
+  transform: translateY(-115%) scale(0.98) rotate(-1.5deg);
   opacity: 0;
 }
 
@@ -447,6 +496,32 @@ button:active {
 .flyLeft {
   transform: translateX(-120%) rotate(-8deg);
   opacity: 0;
+}
+
+.returnDown {
+  transform: translateY(115%) scale(0.98) rotate(1.5deg);
+  opacity: 0;
+}
+
+.previewPromote {
+  transform: translateY(0) scale(1) rotate(0deg);
+  opacity: 1;
+  filter: saturate(1) brightness(1);
+}
+
+.comeBack {
+  animation: comeBack 240ms cubic-bezier(.2,.75,.22,1);
+}
+
+@keyframes comeBack {
+  from {
+    transform: translateY(-90%) scale(0.98) rotate(-1deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
 }
 
 @media (max-width: 420px) {
@@ -464,6 +539,6 @@ button:active {
   }
 
   .actions {
-    gap: 7px;
+    gap: 6px;
   }
 }

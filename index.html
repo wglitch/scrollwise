@@ -40,7 +40,14 @@
       </header>
 
       <div id="cardStage" class="cardStage">
-        <article id="card" class="card">
+        <article id="nextCard" class="card previewCard" aria-hidden="true">
+          <div class="cardPaper">
+            <div id="nextVisualBadge" class="visualBadge"></div>
+            <p id="nextCardText"></p>
+          </div>
+        </article>
+
+        <article id="card" class="card activeCard">
           <div class="cardPaper">
             <div id="visualBadge" class="visualBadge"></div>
             <p id="cardText"></p>
@@ -54,6 +61,7 @@
 
       <footer class="actions">
         <button id="lessBtn" title="Visa mer sällan">← mer sällan</button>
+        <button id="prevBtn" title="Tillbaka ett kort">↓ tillbaka</button>
         <button id="nextBtn" title="Nästa kort">↑ nästa</button>
         <button id="starBtn" title="Stjärnmarkera">★ oftare</button>
       </footer>

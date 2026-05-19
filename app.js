@@ -23,8 +23,6 @@ const VISUAL_STYLES = [
   { className: "v-whisper", badges: ["...", "fragment", "återfunnet"] },
 ];
 
-const CARD_CLASS_PREFIX = "v-";
-
 const els = {
   setup: document.querySelector("#setup"),
   feed: document.querySelector("#feed"),
@@ -35,19 +33,26 @@ const els = {
   resetBtn: document.querySelector("#resetBtn"),
   deckInfo: document.querySelector("#deckInfo"),
   card: document.querySelector("#card"),
+  nextCard: document.querySelector("#nextCard"),
   cardText: document.querySelector("#cardText"),
+  nextCardText: document.querySelector("#nextCardText"),
   rowMeta: document.querySelector("#rowMeta"),
   statusMeta: document.querySelector("#statusMeta"),
   visualBadge: document.querySelector("#visualBadge"),
+  nextVisualBadge: document.querySelector("#nextVisualBadge"),
   lessBtn: document.querySelector("#lessBtn"),
   nextBtn: document.querySelector("#nextBtn"),
+  prevBtn: document.querySelector("#prevBtn"),
   starBtn: document.querySelector("#starBtn"),
 };
 
 let deck = [];
 let current = null;
+let queued = null;
+let previous = null;
 let deckKey = "scrollwise:demo";
 let pointerStart = null;
+let isAnimating = false;
 
 init();
 
@@ -61,6 +66,7 @@ function init() {
   els.resetBtn.addEventListener("click", resetLocalMemory);
 
   els.nextBtn.addEventListener("click", () => actOnCard("next"));
+  els.prevBtn.addEventListener("click", goBackOneCard);
   els.starBtn.addEventListener("click", () => actOnCard("star"));
   els.lessBtn.addEventListener("click", () => actOnCard("less"));
 
@@ -103,6 +109,8 @@ async function loadFromInput() {
 
 function loadDeckFromRows(rows, key, label) {
   deckKey = key;
+  previous = null;
+
   deck = rows
     .map((text, index) => ({
       id: String(index + 1),
@@ -119,7 +127,14 @@ function loadDeckFromRows(rows, key, label) {
   els.deckInfo.textContent = `${label} · ${deck.length} kort`;
   els.setup.classList.add("hidden");
   els.feed.classList.remove("hidden");
-  showNextCard();
+
+  current = createVisualCard(pickWeightedRandomCard());
+  queued = createVisualCard(pickWeightedRandomCard(current.card.id));
+
+  renderActive(current);
+  renderPreview(queued);
+  markSeen(current.card.id);
+  updatePrevButton();
 }
 
 function parseCsvFirstColumn(csv) {
@@ -159,30 +174,52 @@ function parseCsvFirstColumn(csv) {
     .filter(value => value && value.toLowerCase() !== "text");
 }
 
-function showNextCard() {
-  current = pickWeightedRandomCard();
-  const memory = getCardMemory(current.id);
-  const style = pickVisualStyle(current);
+function createVisualCard(card) {
+  const style = pickVisualStyle(card);
+  return {
+    card,
+    styleClass: style.className,
+    badge: pick(style.badges),
+  };
+}
 
-  els.card.className = `card ${style.className}`;
-  els.visualBadge.textContent = pick(style.badges);
-  els.cardText.textContent = current.text;
-  els.rowMeta.textContent = `rad ${current.row}`;
+function renderActive(visualCard, options = {}) {
+  const memory = getCardMemory(visualCard.card.id);
+
+  els.card.className = `card activeCard ${visualCard.styleClass}`;
+  if (options.comeBack) els.card.classList.add("comeBack");
+
+  els.visualBadge.textContent = visualCard.badge;
+  els.cardText.textContent = visualCard.card.text;
+  els.rowMeta.textContent = `rad ${visualCard.card.row}`;
   els.statusMeta.textContent = formatStatus(memory);
   els.starBtn.classList.toggle("starred", Boolean(memory.starred));
 
-  markSeen(current.id);
+  if (options.comeBack) {
+    setTimeout(() => els.card.classList.remove("comeBack"), 260);
+  }
+}
+
+function renderPreview(visualCard) {
+  if (!visualCard) {
+    els.nextCard.className = "card previewCard";
+    els.nextCardText.textContent = "";
+    els.nextVisualBadge.textContent = "";
+    return;
+  }
+
+  els.nextCard.className = `card previewCard ${visualCard.styleClass}`;
+  els.nextVisualBadge.textContent = visualCard.badge;
+  els.nextCardText.textContent = visualCard.card.text;
 }
 
 function pickVisualStyle(card) {
   const textLength = card.text.length;
 
-  // Långa texter får lite större chans till lugnare format.
   if (textLength > 180 && Math.random() < 0.55) {
     return pick(VISUAL_STYLES.filter(s => ["v-small-note", "v-whisper", "v-margin"].includes(s.className)));
   }
 
-  // Väldigt korta rader får gärna bli mer affischiga.
   if (textLength < 65 && Math.random() < 0.55) {
     return pick(VISUAL_STYLES.filter(s => ["v-center-bold", "v-scrap", "v-quote"].includes(s.className)));
   }
@@ -190,10 +227,13 @@ function pickVisualStyle(card) {
   return pick(VISUAL_STYLES);
 }
 
-function pickWeightedRandomCard() {
+function pickWeightedRandomCard(excludeId = null) {
   const now = Date.now();
+  const candidates = deck.length > 1
+    ? deck.filter(card => card.id !== excludeId)
+    : deck;
 
-  const weighted = deck.map(card => {
+  const weighted = candidates.map(card => {
     const memory = getCardMemory(card.id);
     const seenRecentlyMs = memory.lastSeen ? now - memory.lastSeen : Infinity;
 
@@ -206,7 +246,6 @@ function pickWeightedRandomCard() {
     if (seenRecentlyMs < 90 * 1000) weight *= 0.08;
     else if (seenRecentlyMs < 8 * 60 * 1000) weight *= 0.35;
 
-    // Små slumpvågor för att flödet ska kännas mindre mekaniskt.
     weight *= 0.75 + Math.random() * 0.75;
 
     return { card, weight };
@@ -220,40 +259,79 @@ function pickWeightedRandomCard() {
     if (roll <= 0) return item.card;
   }
 
-  return deck[Math.floor(Math.random() * deck.length)];
+  return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
 function actOnCard(action) {
-  if (!current) return;
+  if (!current || isAnimating) return;
 
   if (action === "star") {
-    const memory = getCardMemory(current.id);
-    saveCardMemory(current.id, {
+    const memory = getCardMemory(current.card.id);
+    saveCardMemory(current.card.id, {
       ...memory,
       starred: !memory.starred,
       less: false,
     });
-    animateAndNext("flyRight");
+    advanceCard("flyRight");
   }
 
   if (action === "less") {
-    const memory = getCardMemory(current.id);
-    saveCardMemory(current.id, {
+    const memory = getCardMemory(current.card.id);
+    saveCardMemory(current.card.id, {
       ...memory,
       less: true,
       starred: false,
     });
-    animateAndNext("flyLeft");
+    advanceCard("flyLeft");
   }
 
   if (action === "next") {
-    animateAndNext("flyUp");
+    advanceCard("flyUp");
   }
 }
 
-function animateAndNext(className) {
-  els.card.classList.add(className);
-  setTimeout(showNextCard, 170);
+function advanceCard(animationClass) {
+  if (!current || !queued) return;
+
+  isAnimating = true;
+  previous = current;
+
+  els.card.classList.add(animationClass);
+  els.nextCard.classList.add("previewPromote");
+
+  setTimeout(() => {
+    current = queued;
+    queued = createVisualCard(pickWeightedRandomCard(current.card.id));
+
+    renderActive(current);
+    renderPreview(queued);
+    markSeen(current.card.id);
+    updatePrevButton();
+
+    isAnimating = false;
+  }, 240);
+}
+
+function goBackOneCard() {
+  if (!previous || isAnimating) return;
+
+  isAnimating = true;
+
+  // Put the current card back into the preview slot, because it is now "next" again.
+  queued = current;
+  current = previous;
+  previous = null;
+
+  els.card.classList.add("returnDown");
+
+  setTimeout(() => {
+    renderActive(current, { comeBack: true });
+    renderPreview(queued);
+
+    // Do not call markSeen(). Back means "bring the same artefact back", not a new viewing.
+    updatePrevButton();
+    isAnimating = false;
+  }, 220);
 }
 
 function onPointerDown(event) {
@@ -264,7 +342,7 @@ function onPointerDown(event) {
 }
 
 function onPointerUp(event) {
-  if (!pointerStart) return;
+  if (!pointerStart || isAnimating) return;
 
   const dx = event.clientX - pointerStart.x;
   const dy = event.clientY - pointerStart.y;
@@ -275,6 +353,8 @@ function onPointerUp(event) {
 
   if (absY > 55 && dy < 0 && absY > absX) {
     actOnCard("next");
+  } else if (absY > 55 && dy > 0 && absY > absX) {
+    goBackOneCard();
   } else if (absX > 60 && dx > 0) {
     actOnCard("star");
   } else if (absX > 60 && dx < 0) {
@@ -312,6 +392,10 @@ function markSeen(id) {
     seenCount: (memory.seenCount || 0) + 1,
     lastSeen: Date.now(),
   });
+
+  if (current && current.card.id === id) {
+    els.statusMeta.textContent = formatStatus(getCardMemory(id));
+  }
 }
 
 function formatStatus(memory) {
@@ -329,7 +413,12 @@ function resetLocalMemory() {
   if (!ok) return;
 
   localStorage.removeItem(deckKey);
-  showNextCard();
+  if (current) renderActive(current);
+  updatePrevButton();
+}
+
+function updatePrevButton() {
+  els.prevBtn.disabled = !previous;
 }
 
 function showSetup() {
