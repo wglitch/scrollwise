@@ -3,15 +3,11 @@
   --muted: #7d705f;
   --paper: #f7efd9;
   --paper-dark: #eadbb8;
-  --shelf: #4a2f1e;
   --accent: #9b5f28;
-  --soft: rgba(45, 36, 25, 0.12);
   --shadow: rgba(36, 24, 12, 0.28);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html,
 body {
@@ -24,10 +20,7 @@ body {
     linear-gradient(135deg, #25170f, #6a4428 48%, #2f1d13);
 }
 
-button,
-input {
-  font: inherit;
-}
+button, input { font: inherit; }
 
 .app {
   min-height: 100vh;
@@ -36,9 +29,7 @@ input {
   padding: 20px;
 }
 
-.hidden {
-  display: none !important;
-}
+.hidden { display: none !important; }
 
 .setup {
   min-height: calc(100vh - 40px);
@@ -103,11 +94,6 @@ input {
   outline: none;
 }
 
-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(155, 95, 40, 0.18);
-}
-
 button {
   border: 0;
   border-radius: 999px;
@@ -118,18 +104,14 @@ button {
   box-shadow: 0 5px 14px rgba(65, 38, 15, 0.2);
 }
 
-button:active {
-  transform: translateY(1px);
-}
+button:active { transform: translateY(1px); }
 
 .panel button {
   width: 100%;
   margin-top: 12px;
 }
 
-.secondary {
-  background: #6e5a42;
-}
+.secondary { background: #6e5a42; }
 
 .hint {
   margin: 14px 0 0;
@@ -177,7 +159,6 @@ button:active {
   display: grid;
   place-items: center;
   touch-action: none;
-  perspective: 1000px;
   overflow: hidden;
 }
 
@@ -186,38 +167,27 @@ button:active {
   width: min(100%, 440px);
   min-height: 62vh;
   display: grid;
-  transition:
-    transform 240ms cubic-bezier(.2,.75,.22,1),
-    opacity 220ms ease,
-    filter 220ms ease;
   will-change: transform, opacity;
 }
 
 .activeCard {
   z-index: 4;
+  transform: translateY(0) scale(1);
+  opacity: 1;
 }
 
 .previewCard {
   z-index: 2;
-  transform: translateY(28px) scale(0.955) rotate(0.5deg);
-  opacity: 0.62;
-  filter: saturate(0.75) brightness(0.92);
+  transform: translateY(32px) scale(0.96);
+  opacity: 0.72;
+  filter: saturate(0.85) brightness(0.96);
   pointer-events: none;
 }
 
-.previewCard .cardPaper {
-  min-height: 58vh;
-  box-shadow:
-    inset 0 0 0 1px rgba(82, 48, 18, 0.06),
-    0 15px 38px rgba(22, 13, 6, 0.22);
-}
-
-.previewCard #nextCardText {
-  opacity: 0.58;
-}
-
-.previewCard .cardMeta {
-  display: none;
+.previewCard #nextCardText,
+.previewCard .memoryImage,
+.previewCard .visualBadge {
+  opacity: 0.52;
 }
 
 .cardPaper {
@@ -268,7 +238,7 @@ button:active {
 #cardText,
 #nextCardText {
   position: relative;
-  z-index: 3;
+  z-index: 4;
   margin: 0;
   white-space: pre-wrap;
   max-width: 100%;
@@ -276,7 +246,7 @@ button:active {
 
 .cardMeta {
   position: relative;
-  z-index: 3;
+  z-index: 4;
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -287,12 +257,47 @@ button:active {
   align-self: end;
 }
 
-/* Visual variants */
-
-.v-center-bold .cardPaper {
-  align-content: center;
+/* Placeholder bildfragment */
+.memoryImage {
+  position: absolute;
+  z-index: 3;
+  display: none;
+  border: 8px solid rgba(255, 248, 225, 0.86);
+  box-shadow: 0 8px 18px rgba(40, 25, 12, 0.22);
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.65), transparent 18%),
+    linear-gradient(135deg, #86623f, #d0b37c 48%, #6f482f);
+  filter: sepia(0.72) saturate(0.55) contrast(0.92);
 }
 
+.memoryImage::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -22px;
+  width: 38px;
+  height: 15px;
+  transform: translateX(-50%) rotate(-7deg);
+  border: 2px solid rgba(75, 66, 54, 0.55);
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  background: transparent;
+}
+
+.memoryImage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255,255,255,0.28), transparent 18%),
+    radial-gradient(circle at 80% 30%, rgba(255,255,255,0.18), transparent 22%),
+    linear-gradient(0deg, rgba(58, 36, 18, 0.14), transparent);
+  mix-blend-mode: screen;
+}
+
+/* Visual variants */
+
+.v-center-bold .cardPaper { align-content: center; }
 .v-center-bold #cardText,
 .v-center-bold #nextCardText {
   font-size: clamp(31px, 8.6vw, 48px);
@@ -301,7 +306,6 @@ button:active {
   text-align: center;
   font-weight: 700;
 }
-
 .v-center-bold .visualBadge {
   right: 28px;
   bottom: 72px;
@@ -316,7 +320,6 @@ button:active {
     repeating-linear-gradient(#fff4d8 0 31px, rgba(112, 80, 44, 0.16) 32px),
     linear-gradient(var(--paper), #fff4d8);
 }
-
 .v-small-note #cardText,
 .v-small-note #nextCardText {
   font-family: "Trebuchet MS", Verdana, sans-serif;
@@ -325,7 +328,6 @@ button:active {
   letter-spacing: -0.015em;
   transform: rotate(-0.6deg);
 }
-
 .v-small-note .visualBadge {
   top: 52px;
   right: 34px;
@@ -343,7 +345,6 @@ button:active {
     radial-gradient(circle at 85% 18%, rgba(155, 95, 40, 0.13), transparent 25%),
     linear-gradient(#fff0ca, #f4e4bd);
 }
-
 .v-quote #cardText,
 .v-quote #nextCardText {
   font-size: clamp(26px, 7.3vw, 40px);
@@ -353,7 +354,6 @@ button:active {
   padding-left: 18px;
   border-left: 4px solid rgba(155, 95, 40, 0.45);
 }
-
 .v-quote .visualBadge {
   top: 48px;
   left: 34px;
@@ -368,7 +368,6 @@ button:active {
     linear-gradient(180deg, rgba(155, 95, 40, 0.16) 0 72px, transparent 72px),
     linear-gradient(var(--paper), #fff7e3);
 }
-
 .v-catalog #cardText,
 .v-catalog #nextCardText {
   font-family: "Courier New", Courier, monospace;
@@ -376,7 +375,6 @@ button:active {
   line-height: 1.18;
   letter-spacing: -0.04em;
 }
-
 .v-catalog .visualBadge {
   top: 28px;
   right: 30px;
@@ -392,7 +390,6 @@ button:active {
     linear-gradient(90deg, rgba(155, 95, 40, 0.22) 0 52px, transparent 52px),
     repeating-linear-gradient(#fff4d8 0 29px, rgba(112, 80, 44, 0.13) 30px);
 }
-
 .v-margin #cardText,
 .v-margin #nextCardText {
   font-family: "Palatino Linotype", Palatino, serif;
@@ -401,7 +398,6 @@ button:active {
   margin-left: 40px;
   transform: rotate(0.35deg);
 }
-
 .v-margin .visualBadge {
   writing-mode: vertical-rl;
   top: 88px;
@@ -419,16 +415,13 @@ button:active {
     linear-gradient(#f9eccb, #e8d3a7);
   border-radius: 10px 24px 16px 28px;
 }
-
 .v-scrap #cardText,
 .v-scrap #nextCardText {
   font-family: "Arial Narrow", Arial, sans-serif;
   font-size: clamp(29px, 8vw, 45px);
   line-height: 1.02;
   letter-spacing: -0.055em;
-  text-transform: none;
 }
-
 .v-scrap .visualBadge {
   right: -4px;
   top: 48%;
@@ -443,7 +436,6 @@ button:active {
     radial-gradient(circle at 20% 22%, rgba(255,255,255,0.5), transparent 30%),
     linear-gradient(#f6ead0, #e9d8b4);
 }
-
 .v-whisper #cardText,
 .v-whisper #nextCardText {
   font-size: clamp(19px, 5.3vw, 29px);
@@ -451,12 +443,82 @@ button:active {
   max-width: 84%;
   opacity: 0.92;
 }
-
 .v-whisper .visualBadge {
   top: 72px;
   right: 40px;
   font-size: 44px;
   transform: rotate(-12deg);
+}
+
+/* Nya bildtyper */
+.v-photo-clip .cardPaper {
+  align-content: end;
+  padding-bottom: 78px;
+}
+.v-photo-clip .memoryImage {
+  display: block;
+  width: 42%;
+  height: 27%;
+  right: 36px;
+  top: 72px;
+  transform: rotate(4deg);
+}
+.v-photo-clip #cardText,
+.v-photo-clip #nextCardText {
+  font-size: clamp(23px, 6.5vw, 36px);
+  line-height: 1.16;
+  max-width: 88%;
+}
+
+.v-corner-photo .cardPaper {
+  align-content: center;
+}
+.v-corner-photo .memoryImage {
+  display: block;
+  width: 34%;
+  height: 22%;
+  right: 28px;
+  bottom: 80px;
+  transform: rotate(-5deg);
+}
+.v-corner-photo #cardText,
+.v-corner-photo #nextCardText {
+  font-family: "Palatino Linotype", Palatino, serif;
+  font-size: clamp(24px, 6.9vw, 38px);
+  line-height: 1.14;
+  max-width: 72%;
+}
+
+.v-full-photo .cardPaper {
+  align-content: end;
+  padding-bottom: 76px;
+  background: #6f482f;
+}
+.v-full-photo .memoryImage {
+  display: block;
+  inset: 0;
+  width: auto;
+  height: auto;
+  border: 0;
+  transform: none;
+  opacity: 0.92;
+}
+.v-full-photo .memoryImage::before {
+  display: none;
+}
+.v-full-photo #cardText,
+.v-full-photo #nextCardText {
+  font-size: clamp(28px, 7.8vw, 44px);
+  line-height: 1.04;
+  color: #fff6df;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.45);
+  background: rgba(49, 29, 13, 0.34);
+  padding: 16px;
+  border-radius: 16px;
+}
+.v-full-photo .cardMeta {
+  color: rgba(255,246,220,0.82);
+  border-top-color: rgba(255,246,220,0.32);
 }
 
 .actions {
@@ -472,73 +534,70 @@ button:active {
   box-shadow: none;
 }
 
-.actions button.starred {
-  background: #b87936;
-}
+.actions button.starred { background: #b87936; }
 
 .actions button:disabled {
   opacity: 0.35;
   cursor: default;
 }
 
-/* Motion states */
-
-.flyUp {
-  transform: translateY(-115%) scale(0.98) rotate(-1.5deg);
-  opacity: 0;
+/* Enkla, konsekventa animationer */
+.card.animate-up {
+  animation: outUp 210ms ease-in forwards;
 }
 
-.flyRight {
-  transform: translateX(120%) rotate(8deg);
-  opacity: 0;
+.card.animate-down {
+  animation: outDown 210ms ease-in forwards;
 }
 
-.flyLeft {
-  transform: translateX(-120%) rotate(-8deg);
-  opacity: 0;
+.card.animate-in-from-bottom {
+  animation: inFromBottom 210ms ease-out both;
 }
 
-.returnDown {
-  transform: translateY(115%) scale(0.98) rotate(1.5deg);
-  opacity: 0;
+.card.animate-in-from-top {
+  animation: inFromTop 210ms ease-out both;
 }
 
-.previewPromote {
-  transform: translateY(0) scale(1) rotate(0deg);
-  opacity: 1;
-  filter: saturate(1) brightness(1);
+.card.animate-left {
+  animation: outLeft 210ms ease-in forwards;
 }
 
-.comeBack {
-  animation: comeBack 240ms cubic-bezier(.2,.75,.22,1);
+.card.animate-right {
+  animation: outRight 210ms ease-in forwards;
 }
 
-@keyframes comeBack {
-  from {
-    transform: translateY(-90%) scale(0.98) rotate(-1deg);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0) scale(1) rotate(0deg);
-    opacity: 1;
-  }
+@keyframes outUp {
+  to { transform: translateY(-116%) scale(0.98); opacity: 0; }
+}
+
+@keyframes outDown {
+  to { transform: translateY(116%) scale(0.98); opacity: 0; }
+}
+
+@keyframes inFromBottom {
+  from { transform: translateY(32px) scale(0.96); opacity: 0.72; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes inFromTop {
+  from { transform: translateY(-32px) scale(0.96); opacity: 0.72; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes outLeft {
+  to { transform: translateX(-118%) rotate(-7deg); opacity: 0; }
+}
+
+@keyframes outRight {
+  to { transform: translateX(118%) rotate(7deg); opacity: 0; }
 }
 
 @media (max-width: 420px) {
-  .app {
-    padding: 14px;
-  }
-
-  .topbar {
-    grid-template-columns: 74px 1fr 74px;
-  }
-
+  .app { padding: 14px; }
+  .topbar { grid-template-columns: 74px 1fr 74px; }
   .ghost {
     font-size: 12px;
     padding-inline: 8px;
   }
-
-  .actions {
-    gap: 6px;
-  }
+  .actions { gap: 6px; }
 }

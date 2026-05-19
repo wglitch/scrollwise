@@ -21,6 +21,9 @@ const VISUAL_STYLES = [
   { className: "v-margin", badges: ["marginalia", "kom ihåg", "fältanteckning"] },
   { className: "v-scrap", badges: ["✂", "✶", "◇"] },
   { className: "v-whisper", badges: ["...", "fragment", "återfunnet"] },
+  { className: "v-photo-clip", badges: ["foto", "urklipp", "minnesbild"] },
+  { className: "v-corner-photo", badges: ["arkivfoto", "spår", "funnet"] },
+  { className: "v-full-photo", badges: ["bildminne", "återblick", "fält"] },
 ];
 
 const els = {
@@ -40,6 +43,8 @@ const els = {
   statusMeta: document.querySelector("#statusMeta"),
   visualBadge: document.querySelector("#visualBadge"),
   nextVisualBadge: document.querySelector("#nextVisualBadge"),
+  cardImage: document.querySelector("#cardImage"),
+  nextImage: document.querySelector("#nextImage"),
   lessBtn: document.querySelector("#lessBtn"),
   nextBtn: document.querySelector("#nextBtn"),
   prevBtn: document.querySelector("#prevBtn"),
@@ -48,7 +53,7 @@ const els = {
 
 let deck = [];
 let current = null;
-let queued = null;
+let next = null;
 let previous = null;
 let deckKey = "scrollwise:demo";
 let pointerStart = null;
@@ -65,10 +70,10 @@ function init() {
   els.backBtn.addEventListener("click", showSetup);
   els.resetBtn.addEventListener("click", resetLocalMemory);
 
-  els.nextBtn.addEventListener("click", () => actOnCard("next"));
-  els.prevBtn.addEventListener("click", goBackOneCard);
-  els.starBtn.addEventListener("click", () => actOnCard("star"));
-  els.lessBtn.addEventListener("click", () => actOnCard("less"));
+  els.nextBtn.addEventListener("click", () => advance("up"));
+  els.prevBtn.addEventListener("click", goBack);
+  els.starBtn.addEventListener("click", starAndAdvance);
+  els.lessBtn.addEventListener("click", lessAndAdvance);
 
   els.card.addEventListener("pointerdown", onPointerDown);
   els.card.addEventListener("pointerup", onPointerUp);
@@ -112,11 +117,7 @@ function loadDeckFromRows(rows, key, label) {
   previous = null;
 
   deck = rows
-    .map((text, index) => ({
-      id: String(index + 1),
-      row: index + 1,
-      text: String(text || "").trim(),
-    }))
+    .map((text, index) => ({ id: String(index + 1), row: index + 1, text: String(text || "").trim() }))
     .filter(card => card.text.length > 0);
 
   if (!deck.length) {
@@ -128,11 +129,11 @@ function loadDeckFromRows(rows, key, label) {
   els.setup.classList.add("hidden");
   els.feed.classList.remove("hidden");
 
-  current = createVisualCard(pickWeightedRandomCard());
-  queued = createVisualCard(pickWeightedRandomCard(current.card.id));
+  current = makeVisualCard(pickWeightedRandomCard());
+  next = makeVisualCard(pickWeightedRandomCard(current.card.id));
 
-  renderActive(current);
-  renderPreview(queued);
+  renderCurrent();
+  renderNext();
   markSeen(current.card.id);
   updatePrevButton();
 }
@@ -145,9 +146,9 @@ function parseCsvFirstColumn(csv) {
 
   for (let i = 0; i < csv.length; i++) {
     const char = csv[i];
-    const next = csv[i + 1];
+    const nextChar = csv[i + 1];
 
-    if (char === '"' && inQuotes && next === '"') {
+    if (char === '"' && inQuotes && nextChar === '"') {
       cell += '"';
       i++;
     } else if (char === '"') {
@@ -156,7 +157,7 @@ function parseCsvFirstColumn(csv) {
       row.push(cell);
       cell = "";
     } else if ((char === "\n" || char === "\r") && !inQuotes) {
-      if (char === "\r" && next === "\n") i++;
+      if (char === "\r" && nextChar === "\n") i++;
       row.push(cell);
       rows.push(row[0]);
       row = [];
@@ -174,78 +175,93 @@ function parseCsvFirstColumn(csv) {
     .filter(value => value && value.toLowerCase() !== "text");
 }
 
-function createVisualCard(card) {
+function makeVisualCard(card) {
   const style = pickVisualStyle(card);
   return {
     card,
     styleClass: style.className,
     badge: pick(style.badges),
+    imageSeed: makeImageSeed(card),
   };
 }
 
-function renderActive(visualCard, options = {}) {
-  const memory = getCardMemory(visualCard.card.id);
-
-  els.card.className = `card activeCard ${visualCard.styleClass}`;
-  if (options.comeBack) els.card.classList.add("comeBack");
-
-  els.visualBadge.textContent = visualCard.badge;
-  els.cardText.textContent = visualCard.card.text;
-  els.rowMeta.textContent = `rad ${visualCard.card.row}`;
-  els.statusMeta.textContent = formatStatus(memory);
-  els.starBtn.classList.toggle("starred", Boolean(memory.starred));
-
-  if (options.comeBack) {
-    setTimeout(() => els.card.classList.remove("comeBack"), 260);
-  }
+function makeImageSeed(card) {
+  const themes = [
+    ["#8a5f34", "#d7bd83", "#5f3c28"],
+    ["#6c7350", "#d6c087", "#76513c"],
+    ["#5b6470", "#cab88b", "#8a5b38"],
+    ["#7c5c47", "#e2cf9f", "#57412f"],
+    ["#586b5a", "#d9c48e", "#7f4e31"],
+  ];
+  return themes[Number(card.id) % themes.length];
 }
 
-function renderPreview(visualCard) {
-  if (!visualCard) {
-    els.nextCard.className = "card previewCard";
-    els.nextCardText.textContent = "";
-    els.nextVisualBadge.textContent = "";
-    return;
-  }
+function renderCurrent(extraClass = "") {
+  const memory = getCardMemory(current.card.id);
+  els.card.className = `card activeCard ${current.styleClass} ${extraClass}`.trim();
+  els.visualBadge.textContent = current.badge;
+  els.cardText.textContent = current.card.text;
+  els.rowMeta.textContent = `rad ${current.card.row}`;
+  els.statusMeta.textContent = formatStatus(memory);
+  els.starBtn.classList.toggle("starred", Boolean(memory.starred));
+  applyImageSeed(els.cardImage, current.imageSeed, memory);
+}
 
-  els.nextCard.className = `card previewCard ${visualCard.styleClass}`;
-  els.nextVisualBadge.textContent = visualCard.badge;
-  els.nextCardText.textContent = visualCard.card.text;
+function renderNext() {
+  if (!next) return;
+  els.nextCard.className = `card previewCard ${next.styleClass}`;
+  els.nextVisualBadge.textContent = next.badge;
+  els.nextCardText.textContent = next.card.text;
+  applyImageSeed(els.nextImage, next.imageSeed, getCardMemory(next.card.id));
+}
+
+function applyImageSeed(el, seed, memory) {
+  const seen = memory.seenCount || 0;
+  const starredBoost = memory.starred ? 4 : 0;
+  const saturation = Math.min(1.15, 0.45 + (seen + starredBoost) * 0.08);
+  const sepia = Math.max(0.18, 0.78 - (seen + starredBoost) * 0.06);
+
+  el.style.background = `
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.65), transparent 18%),
+    linear-gradient(135deg, ${seed[0]}, ${seed[1]} 48%, ${seed[2]})
+  `;
+  el.style.filter = `sepia(${sepia}) saturate(${saturation}) contrast(0.92)`;
 }
 
 function pickVisualStyle(card) {
   const textLength = card.text.length;
 
-  if (textLength > 180 && Math.random() < 0.55) {
+  if (textLength > 180) {
     return pick(VISUAL_STYLES.filter(s => ["v-small-note", "v-whisper", "v-margin"].includes(s.className)));
+  }
+
+  if (Math.random() < 0.32) {
+    const photoStyles = textLength < 110
+      ? ["v-photo-clip", "v-corner-photo", "v-full-photo"]
+      : ["v-photo-clip", "v-corner-photo"];
+    return pick(VISUAL_STYLES.filter(s => photoStyles.includes(s.className)));
   }
 
   if (textLength < 65 && Math.random() < 0.55) {
     return pick(VISUAL_STYLES.filter(s => ["v-center-bold", "v-scrap", "v-quote"].includes(s.className)));
   }
 
-  return pick(VISUAL_STYLES);
+  return pick(VISUAL_STYLES.filter(s => !s.className.includes("photo")));
 }
 
 function pickWeightedRandomCard(excludeId = null) {
   const now = Date.now();
-  const candidates = deck.length > 1
-    ? deck.filter(card => card.id !== excludeId)
-    : deck;
+  const candidates = deck.length > 1 ? deck.filter(card => card.id !== excludeId) : deck;
 
   const weighted = candidates.map(card => {
     const memory = getCardMemory(card.id);
     const seenRecentlyMs = memory.lastSeen ? now - memory.lastSeen : Infinity;
 
     let weight = 1;
-
     if (memory.starred) weight *= 2.4;
     if (memory.less) weight *= 0.35;
-
-    // Inte spaced repetition: bara en mild broms så samma kort inte loopar direkt.
     if (seenRecentlyMs < 90 * 1000) weight *= 0.08;
     else if (seenRecentlyMs < 8 * 60 * 1000) weight *= 0.35;
-
     weight *= 0.75 + Math.random() * 0.75;
 
     return { card, weight };
@@ -262,83 +278,70 @@ function pickWeightedRandomCard(excludeId = null) {
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-function actOnCard(action) {
-  if (!current || isAnimating) return;
-
-  if (action === "star") {
-    const memory = getCardMemory(current.card.id);
-    saveCardMemory(current.card.id, {
-      ...memory,
-      starred: !memory.starred,
-      less: false,
-    });
-    advanceCard("flyRight");
-  }
-
-  if (action === "less") {
-    const memory = getCardMemory(current.card.id);
-    saveCardMemory(current.card.id, {
-      ...memory,
-      less: true,
-      starred: false,
-    });
-    advanceCard("flyLeft");
-  }
-
-  if (action === "next") {
-    advanceCard("flyUp");
-  }
-}
-
-function advanceCard(animationClass) {
-  if (!current || !queued) return;
-
+function advance(direction) {
+  if (isAnimating || !current || !next) return;
   isAnimating = true;
+
   previous = current;
 
-  els.card.classList.add(animationClass);
-  els.nextCard.classList.add("previewPromote");
+  const oldCurrentEl = els.card;
+  const incomingClass = direction === "up" ? "animate-in-from-bottom" : "animate-in-from-top";
+  const outgoingClass =
+    direction === "left" ? "animate-left" :
+    direction === "right" ? "animate-right" :
+    "animate-up";
+
+  oldCurrentEl.classList.add(outgoingClass);
+  els.nextCard.classList.remove("previewCard");
+  els.nextCard.classList.add("activeCard", incomingClass);
 
   setTimeout(() => {
-    current = queued;
-    queued = createVisualCard(pickWeightedRandomCard(current.card.id));
+    current = next;
+    next = makeVisualCard(pickWeightedRandomCard(current.card.id));
 
-    renderActive(current);
-    renderPreview(queued);
+    renderCurrent();
+    renderNext();
     markSeen(current.card.id);
-    updatePrevButton();
-
-    isAnimating = false;
-  }, 240);
-}
-
-function goBackOneCard() {
-  if (!previous || isAnimating) return;
-
-  isAnimating = true;
-
-  // Put the current card back into the preview slot, because it is now "next" again.
-  queued = current;
-  current = previous;
-  previous = null;
-
-  els.card.classList.add("returnDown");
-
-  setTimeout(() => {
-    renderActive(current, { comeBack: true });
-    renderPreview(queued);
-
-    // Do not call markSeen(). Back means "bring the same artefact back", not a new viewing.
     updatePrevButton();
     isAnimating = false;
   }, 220);
 }
 
+function goBack() {
+  if (isAnimating || !previous) return;
+  isAnimating = true;
+
+  const future = current;
+  current = previous;
+  next = future;
+  previous = null;
+
+  els.card.classList.add("animate-down");
+
+  setTimeout(() => {
+    renderCurrent("animate-in-from-top");
+    renderNext();
+    updatePrevButton();
+    isAnimating = false;
+  }, 220);
+}
+
+function starAndAdvance() {
+  if (!current || isAnimating) return;
+  const memory = getCardMemory(current.card.id);
+  saveCardMemory(current.card.id, { ...memory, starred: !memory.starred, less: false });
+  advance("right");
+}
+
+function lessAndAdvance() {
+  if (!current || isAnimating) return;
+  const memory = getCardMemory(current.card.id);
+  saveCardMemory(current.card.id, { ...memory, less: true, starred: false });
+  advance("left");
+}
+
 function onPointerDown(event) {
-  pointerStart = {
-    x: event.clientX,
-    y: event.clientY,
-  };
+  pointerStart = { x: event.clientX, y: event.clientY };
 }
 
 function onPointerUp(event) {
@@ -351,23 +354,15 @@ function onPointerUp(event) {
   const absX = Math.abs(dx);
   const absY = Math.abs(dy);
 
-  if (absY > 55 && dy < 0 && absY > absX) {
-    actOnCard("next");
-  } else if (absY > 55 && dy > 0 && absY > absX) {
-    goBackOneCard();
-  } else if (absX > 60 && dx > 0) {
-    actOnCard("star");
-  } else if (absX > 60 && dx < 0) {
-    actOnCard("less");
-  }
+  if (absY > 55 && dy < 0 && absY > absX) advance("up");
+  else if (absY > 55 && dy > 0 && absY > absX) goBack();
+  else if (absX > 60 && dx > 0) starAndAdvance();
+  else if (absX > 60 && dx < 0) lessAndAdvance();
 }
 
 function getMemoryStore() {
-  try {
-    return JSON.parse(localStorage.getItem(deckKey) || "{}");
-  } catch {
-    return {};
-  }
+  try { return JSON.parse(localStorage.getItem(deckKey) || "{}"); }
+  catch { return {}; }
 }
 
 function setMemoryStore(store) {
@@ -386,12 +381,7 @@ function saveCardMemory(id, memory) {
 
 function markSeen(id) {
   const memory = getCardMemory(id);
-
-  saveCardMemory(id, {
-    ...memory,
-    seenCount: (memory.seenCount || 0) + 1,
-    lastSeen: Date.now(),
-  });
+  saveCardMemory(id, { ...memory, seenCount: (memory.seenCount || 0) + 1, lastSeen: Date.now() });
 
   if (current && current.card.id === id) {
     els.statusMeta.textContent = formatStatus(getCardMemory(id));
@@ -400,11 +390,9 @@ function markSeen(id) {
 
 function formatStatus(memory) {
   const parts = [];
-
   if (memory.starred) parts.push("★ oftare");
   if (memory.less) parts.push("mer sällan");
   if (memory.seenCount) parts.push(`${memory.seenCount} visningar`);
-
   return parts.join(" · ") || "nytt i arkivet";
 }
 
@@ -413,7 +401,8 @@ function resetLocalMemory() {
   if (!ok) return;
 
   localStorage.removeItem(deckKey);
-  if (current) renderActive(current);
+  if (current) renderCurrent();
+  if (next) renderNext();
   updatePrevButton();
 }
 
