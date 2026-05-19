@@ -189,8 +189,7 @@ button:active {
 .cardPaper {
   position: relative;
   display: grid;
-  align-content: center;
-  gap: 24px;
+  gap: 18px;
   padding: clamp(26px, 8vw, 44px);
   border-radius: 24px;
   background:
@@ -201,6 +200,7 @@ button:active {
     inset 0 0 0 1px rgba(82, 48, 18, 0.06),
     0 24px 55px var(--shadow);
   overflow: hidden;
+  min-height: 62vh;
 }
 
 .cardPaper::before {
@@ -223,15 +223,25 @@ button:active {
   text-transform: uppercase;
 }
 
+.visualBadge {
+  position: absolute;
+  z-index: 2;
+  color: rgba(45, 36, 25, 0.24);
+  pointer-events: none;
+  user-select: none;
+}
+
 #cardText {
+  position: relative;
+  z-index: 3;
   margin: 0;
   white-space: pre-wrap;
-  font-size: clamp(28px, 8vw, 46px);
-  line-height: 1.08;
-  letter-spacing: -0.035em;
+  max-width: 100%;
 }
 
 .cardMeta {
+  position: relative;
+  z-index: 3;
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -239,6 +249,172 @@ button:active {
   font-size: 13px;
   border-top: 1px dashed rgba(88, 55, 25, 0.26);
   padding-top: 14px;
+  align-self: end;
+}
+
+/* Visual variants */
+
+.v-center-bold .cardPaper {
+  align-content: center;
+}
+
+.v-center-bold #cardText {
+  font-size: clamp(31px, 8.6vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+  text-align: center;
+  font-weight: 700;
+}
+
+.v-center-bold .visualBadge {
+  right: 28px;
+  bottom: 72px;
+  font-size: 74px;
+  transform: rotate(-8deg);
+}
+
+.v-small-note .cardPaper {
+  align-content: start;
+  padding-top: 84px;
+  background:
+    repeating-linear-gradient(#fff4d8 0 31px, rgba(112, 80, 44, 0.16) 32px),
+    linear-gradient(var(--paper), #fff4d8);
+}
+
+.v-small-note #cardText {
+  font-family: "Trebuchet MS", Verdana, sans-serif;
+  font-size: clamp(20px, 5.5vw, 30px);
+  line-height: 1.32;
+  letter-spacing: -0.015em;
+  transform: rotate(-0.6deg);
+}
+
+.v-small-note .visualBadge {
+  top: 52px;
+  right: 34px;
+  font-size: 30px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 1px solid rgba(45, 36, 25, 0.22);
+  padding: 5px 8px;
+  transform: rotate(7deg);
+}
+
+.v-quote .cardPaper {
+  align-content: center;
+  background:
+    radial-gradient(circle at 85% 18%, rgba(155, 95, 40, 0.13), transparent 25%),
+    linear-gradient(#fff0ca, #f4e4bd);
+}
+
+.v-quote #cardText {
+  font-size: clamp(26px, 7.3vw, 40px);
+  line-height: 1.17;
+  font-style: italic;
+  text-align: left;
+  padding-left: 18px;
+  border-left: 4px solid rgba(155, 95, 40, 0.45);
+}
+
+.v-quote .visualBadge {
+  top: 48px;
+  left: 34px;
+  font-size: 88px;
+  line-height: 1;
+}
+
+.v-catalog .cardPaper {
+  align-content: start;
+  padding-top: 100px;
+  background:
+    linear-gradient(180deg, rgba(155, 95, 40, 0.16) 0 72px, transparent 72px),
+    linear-gradient(var(--paper), #fff7e3);
+}
+
+.v-catalog #cardText {
+  font-family: "Courier New", Courier, monospace;
+  font-size: clamp(22px, 6.4vw, 34px);
+  line-height: 1.18;
+  letter-spacing: -0.04em;
+}
+
+.v-catalog .visualBadge {
+  top: 28px;
+  right: 30px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.v-margin .cardPaper {
+  align-content: center;
+  background:
+    linear-gradient(90deg, rgba(155, 95, 40, 0.22) 0 52px, transparent 52px),
+    repeating-linear-gradient(#fff4d8 0 29px, rgba(112, 80, 44, 0.13) 30px);
+}
+
+.v-margin #cardText {
+  font-family: "Palatino Linotype", Palatino, serif;
+  font-size: clamp(23px, 6.8vw, 38px);
+  line-height: 1.2;
+  margin-left: 40px;
+  transform: rotate(0.35deg);
+}
+
+.v-margin .visualBadge {
+  writing-mode: vertical-rl;
+  top: 88px;
+  left: 16px;
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.v-scrap .cardPaper {
+  align-content: center;
+  transform: rotate(-0.8deg);
+  background:
+    linear-gradient(11deg, rgba(255,255,255,0.32), transparent 42%),
+    linear-gradient(#f9eccb, #e8d3a7);
+  border-radius: 10px 24px 16px 28px;
+}
+
+.v-scrap #cardText {
+  font-family: "Arial Narrow", Arial, sans-serif;
+  font-size: clamp(29px, 8vw, 45px);
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+  text-transform: none;
+}
+
+.v-scrap .visualBadge {
+  right: -4px;
+  top: 48%;
+  font-size: 90px;
+  transform: rotate(12deg);
+}
+
+.v-whisper .cardPaper {
+  align-content: end;
+  padding-bottom: 96px;
+  background:
+    radial-gradient(circle at 20% 22%, rgba(255,255,255,0.5), transparent 30%),
+    linear-gradient(#f6ead0, #e9d8b4);
+}
+
+.v-whisper #cardText {
+  font-size: clamp(19px, 5.3vw, 29px);
+  line-height: 1.38;
+  max-width: 84%;
+  opacity: 0.92;
+}
+
+.v-whisper .visualBadge {
+  top: 72px;
+  right: 40px;
+  font-size: 44px;
+  transform: rotate(-12deg);
 }
 
 .actions {

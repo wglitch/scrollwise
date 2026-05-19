@@ -8,8 +8,22 @@ const DEMO_CARDS = [
   "Klättring: titta med fötterna först, händerna sen.",
   "Journalistik: vad är det starkaste motargumentet mot min vinkel?",
   "När något känns krångligt: minska systemet tills det går att röra vid.",
-  "En idé behöver ibland bara överleva som en rad i ett arkiv."
+  "En idé behöver ibland bara överleva som en rad i ett arkiv.",
+  "Allt behöver inte bli ett projekt. Vissa tankar vill bara cirkulera lite.",
+  "Det du stjärnmarkerar är inte viktigast. Bara mer magnetiskt just nu."
 ];
+
+const VISUAL_STYLES = [
+  { className: "v-center-bold", badges: ["✦", "※", "◎"] },
+  { className: "v-small-note", badges: ["noterat", "sparat", "minne"] },
+  { className: "v-quote", badges: ["“", "”", "❧"] },
+  { className: "v-catalog", badges: ["arkivkort", "index", "rad"] },
+  { className: "v-margin", badges: ["marginalia", "kom ihåg", "fältanteckning"] },
+  { className: "v-scrap", badges: ["✂", "✶", "◇"] },
+  { className: "v-whisper", badges: ["...", "fragment", "återfunnet"] },
+];
+
+const CARD_CLASS_PREFIX = "v-";
 
 const els = {
   setup: document.querySelector("#setup"),
@@ -24,6 +38,7 @@ const els = {
   cardText: document.querySelector("#cardText"),
   rowMeta: document.querySelector("#rowMeta"),
   statusMeta: document.querySelector("#statusMeta"),
+  visualBadge: document.querySelector("#visualBadge"),
   lessBtn: document.querySelector("#lessBtn"),
   nextBtn: document.querySelector("#nextBtn"),
   starBtn: document.querySelector("#starBtn"),
@@ -147,14 +162,32 @@ function parseCsvFirstColumn(csv) {
 function showNextCard() {
   current = pickWeightedRandomCard();
   const memory = getCardMemory(current.id);
+  const style = pickVisualStyle(current);
 
-  els.card.className = "card";
+  els.card.className = `card ${style.className}`;
+  els.visualBadge.textContent = pick(style.badges);
   els.cardText.textContent = current.text;
   els.rowMeta.textContent = `rad ${current.row}`;
   els.statusMeta.textContent = formatStatus(memory);
   els.starBtn.classList.toggle("starred", Boolean(memory.starred));
 
   markSeen(current.id);
+}
+
+function pickVisualStyle(card) {
+  const textLength = card.text.length;
+
+  // Långa texter får lite större chans till lugnare format.
+  if (textLength > 180 && Math.random() < 0.55) {
+    return pick(VISUAL_STYLES.filter(s => ["v-small-note", "v-whisper", "v-margin"].includes(s.className)));
+  }
+
+  // Väldigt korta rader får gärna bli mer affischiga.
+  if (textLength < 65 && Math.random() < 0.55) {
+    return pick(VISUAL_STYLES.filter(s => ["v-center-bold", "v-scrap", "v-quote"].includes(s.className)));
+  }
+
+  return pick(VISUAL_STYLES);
 }
 
 function pickWeightedRandomCard() {
@@ -315,4 +348,8 @@ function shortDeckName(url) {
   } catch {
     return "Egen feed";
   }
+}
+
+function pick(array) {
+  return array[Math.floor(Math.random() * array.length)];
 }
