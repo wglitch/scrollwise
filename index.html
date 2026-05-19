@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scrollwise</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <section id="setup" class="setup">
+      <div class="brand">
+        <div class="seal">S</div>
+        <div>
+          <h1>Scrollwise</h1>
+          <p>Din egenvalda scroll genom minnets bibliotek.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <label for="csvUrl">Google Sheet / CSV-länk</label>
+        <input id="csvUrl" type="url" placeholder="Klistra in publicerad CSV-länk…" />
+        <button id="loadBtn">Ladda feed</button>
+        <button id="demoBtn" class="secondary">Testa med demokort</button>
+        <p class="hint">
+          För Google Sheets: Arkiv → Dela → Publicera på webben → välj CSV.
+          Första kolumnen blir korttext. Extra kolumner ignoreras i första versionen.
+        </p>
+      </div>
+    </section>
+
+    <section id="feed" class="feed hidden">
+      <header class="topbar">
+        <button id="backBtn" class="ghost">← Källa</button>
+        <div class="titleBlock">
+          <strong>Scrollwise</strong>
+          <span id="deckInfo">Demofeed</span>
+        </div>
+        <button id="resetBtn" class="ghost">Nollställ</button>
+      </header>
+
+      <div id="cardStage" class="cardStage">
+        <article id="card" class="card">
+          <div class="cardPaper">
+            <p id="cardText"></p>
+            <div class="cardMeta">
+              <span id="rowMeta"></span>
+              <span id="statusMeta"></span>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <footer class="actions">
+        <button id="lessBtn" title="Visa mer sällan">← mer sällan</button>
+        <button id="nextBtn" title="Nästa kort">↑ nästa</button>
+        <button id="starBtn" title="Stjärnmarkera">★ oftare</button>
+      </footer>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
