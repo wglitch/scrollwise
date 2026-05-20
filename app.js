@@ -32,6 +32,8 @@ const els = {
   feed: document.querySelector("#feed"),
   csvUrl: document.querySelector("#csvUrl"),
   loadBtn: document.querySelector("#loadBtn"),
+  loadLocalCsvBtn: document.querySelector("#loadLocalCsvBtn"),
+  csvFileInput: document.querySelector("#csvFileInput"),
   demoBtn: document.querySelector("#demoBtn"),
   pickImagesBtn: document.querySelector("#pickImagesBtn"),
   pickImagesBtnFeed: document.querySelector("#pickImagesBtnFeed"),
@@ -73,6 +75,8 @@ function init() {
   if (savedUrl) els.csvUrl.value = savedUrl;
 
   els.loadBtn.addEventListener("click", loadFromInput);
+  els.loadLocalCsvBtn?.addEventListener("click", () => els.csvFileInput.click());
+  els.csvFileInput?.addEventListener("change", handleLocalCsvPick);
   els.demoBtn.addEventListener("click", () => loadDeckFromRows(DEMO_CARDS, "scrollwise:demo", "Demofeed"));
   els.pickImagesBtn.addEventListener("click", () => els.imageInput.click());
   els.pickImagesBtnFeed.addEventListener("click", () => els.imageInput.click());
@@ -140,6 +144,56 @@ function updateImageStatus() {
     : "stock-fragment";
 }
 
+
+async function handleLocalCsvPick(event) {
+  const file = event.target.files?.[0];
+
+  if (!file) return;
+
+  try {
+    els.loadBtn.textContent = "Laddar…";
+
+    const rawText = await file.text();
+
+    if (looksLikeHtml(rawText)) {
+      throw new Error(
+        "Filen verkar innehålla HTML, inte CSV.\n\n" +
+        "Kontrollera att du laddade ner arket som CSV."
+      );
+    }
+
+    const parsed = parseAndCleanCsv(rawText);
+
+    if (!parsed.rows.length) {
+      throw new Error(
+        "Hittade inga användbara kort i första kolumnen.\n\n" +
+        "Kontrollera att CSV-filen har en kolumn med korttext."
+      );
+    }
+
+    const ignoredText = parsed.ignored
+      ? ` · ${parsed.ignored} skräprader ignorerades`
+      : "";
+
+    loadDeckFromRows(
+      parsed.rows,
+      makeDeckKey(`local:${file.name}:${file.size}:${file.lastModified}`),
+      `${file.name} · ${parsed.rows.length} kort${ignoredText}`
+    );
+
+    // Gör det möjligt att välja samma fil igen senare.
+    event.target.value = "";
+  } catch (err) {
+    const message = err?.message || String(err);
+    const extra = message.includes("Failed to fetch") || message.includes("NetworkError")
+      ? "\n\nDet kan vara Google/CORS som stoppar länken. Testa knappen “Ladda lokal CSV-fil” i stället."
+      : "";
+    alert(message + extra);
+  } finally {
+    els.loadBtn.textContent = "Ladda feed";
+  }
+}
+
 async function loadFromInput() {
   const rawUrl = els.csvUrl.value.trim();
 
@@ -155,7 +209,7 @@ async function loadFromInput() {
     const response = await fetch(csvUrl);
 
     if (!response.ok) {
-      throw new Error(`Kunde inte ladda datan (${response.status}). Kontrollera att arket är delat/publicerat.`);
+      throw new Error(`Kunde inte ladda datan (${response.status}). Kontrollera att arket är publicerat, eller använd knappen “Ladda lokal CSV-fil”.`);
     }
 
     const rawText = await response.text();
