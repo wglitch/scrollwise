@@ -10,7 +10,8 @@ const DEMO_CARDS = [
   "När något känns krångligt: minska systemet tills det går att röra vid.",
   "En idé behöver ibland bara överleva som en rad i ett arkiv.",
   "Allt behöver inte bli ett projekt. Vissa tankar vill bara cirkulera lite.",
-  "Det du stjärnmarkerar är inte viktigast. Bara mer magnetiskt just nu."
+  "Det du stjärnmarkerar är inte viktigast. Bara mer magnetiskt just nu.",
+  "Det här är ett mycket längre testkort för att kontrollera att stora textsjok faktiskt får plats på kortet utan att klippas av. Texten ska hellre bli mindre än att försvinna utanför ytan, även om det gör att den visuella affischkänslan blir lugnare."
 ];
 
 const VISUAL_STYLES = [
@@ -76,6 +77,7 @@ function init() {
   els.pickImagesBtn.addEventListener("click", () => els.imageInput.click());
   els.pickImagesBtnFeed.addEventListener("click", () => els.imageInput.click());
   els.imageInput.addEventListener("change", handleImagePick);
+
   els.backBtn.addEventListener("click", showSetup);
   els.resetBtn.addEventListener("click", resetLocalMemory);
 
@@ -232,12 +234,27 @@ function makeVisualCard(card) {
   const visual = {
     card,
     styleClass: style.className,
+    sizeClass: getTextSizeClass(card.text, style.className),
     badge: pick(style.badges),
     imageSeed: makeImageSeed(card),
     userImageUrl: null,
   };
 
   return refreshVisualCardImage(visual);
+}
+
+function getTextSizeClass(text, styleClass) {
+  const len = text.length;
+
+  if (len > 420) return "text-xs";
+  if (len > 280) return "text-xs";
+  if (len > 190) return "text-sm";
+  if (len > 120) return "text-md";
+  if (len > 65) return "text-lg";
+
+  // Kort text får affischkänsla oftare, men inte när den ligger på helbild.
+  if (styleClass === "v-full-photo") return "text-lg";
+  return "text-xl";
 }
 
 function refreshVisualCardImage(visual) {
@@ -264,7 +281,7 @@ function makeImageSeed(card) {
 
 function renderCurrent(extraClass = "") {
   const memory = getCardMemory(current.card.id);
-  els.card.className = `card activeCard ${current.styleClass} ${extraClass}`.trim();
+  els.card.className = `card activeCard ${current.styleClass} ${current.sizeClass} ${extraClass}`.trim();
   els.visualBadge.textContent = current.badge;
   els.cardText.textContent = current.card.text;
   els.rowMeta.textContent = `rad ${current.card.row}`;
@@ -275,7 +292,7 @@ function renderCurrent(extraClass = "") {
 
 function renderNext() {
   if (!next) return;
-  els.nextCard.className = `card previewCard ${next.styleClass}`;
+  els.nextCard.className = `card previewCard ${next.styleClass} ${next.sizeClass}`;
   els.nextVisualBadge.textContent = next.badge;
   els.nextCardText.textContent = next.card.text;
   applyImage(els.nextImage, next, getCardMemory(next.card.id));
@@ -287,10 +304,18 @@ function applyImage(el, visualCard, memory) {
   const seen = memory.seenCount || 0;
   const starredBoost = memory.starred ? 4 : 0;
   const memoryStrength = seen + starredBoost;
+  const isFullPhoto = visualCard.styleClass === "v-full-photo";
 
-  const saturation = Math.min(1.22, 0.44 + memoryStrength * 0.085);
-  const sepia = Math.max(0.12, 0.78 - memoryStrength * 0.06);
-  const brightness = Math.min(1.04, 0.93 + memoryStrength * 0.01);
+  let saturation = Math.min(1.22, 0.44 + memoryStrength * 0.085);
+  let sepia = Math.max(0.12, 0.78 - memoryStrength * 0.06);
+  let brightness = Math.min(1.04, 0.93 + memoryStrength * 0.01);
+
+  // På helbild prioriterar vi alltid läsbar text framför färg.
+  if (isFullPhoto) {
+    saturation = Math.min(0.75, saturation);
+    sepia = Math.max(0.62, sepia);
+    brightness = Math.min(0.78, brightness);
+  }
 
   if (visualCard.userImageUrl) {
     el.style.backgroundImage = `
@@ -305,7 +330,7 @@ function applyImage(el, visualCard, memory) {
     `;
   }
 
-  el.style.filter = `sepia(${sepia}) saturate(${saturation}) brightness(${brightness}) contrast(0.92)`;
+  el.style.filter = `sepia(${sepia}) saturate(${saturation}) brightness(${brightness}) contrast(0.9)`;
 }
 
 function pickVisualStyle(card) {
@@ -318,7 +343,8 @@ function pickVisualStyle(card) {
   const photoChance = userImages.length ? 0.46 : 0.32;
 
   if (Math.random() < photoChance) {
-    const photoStyles = textLength < 110
+    // Fullbild bara på kort text, annars riskerar kontrast/läsbarhet att bli sämre.
+    const photoStyles = textLength < 80
       ? ["v-photo-clip", "v-corner-photo", "v-full-photo"]
       : ["v-photo-clip", "v-corner-photo"];
     return pick(VISUAL_STYLES.filter(s => photoStyles.includes(s.className)));
@@ -366,16 +392,14 @@ function advance(direction) {
 
   previous = current;
 
-  const oldCurrentEl = els.card;
-  const incomingClass = direction === "up" ? "animate-in-from-bottom" : "animate-in-from-top";
   const outgoingClass =
     direction === "left" ? "animate-left" :
     direction === "right" ? "animate-right" :
     "animate-up";
 
-  oldCurrentEl.classList.add(outgoingClass);
+  els.card.classList.add(outgoingClass);
   els.nextCard.classList.remove("previewCard");
-  els.nextCard.classList.add("activeCard", incomingClass);
+  els.nextCard.classList.add("activeCard", "animate-in-from-bottom");
 
   setTimeout(() => {
     current = next;

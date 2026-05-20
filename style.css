@@ -215,6 +215,7 @@ button:active { transform: translateY(1px); }
 .cardPaper {
   position: relative;
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 18px;
   padding: clamp(26px, 8vw, 44px);
   border-radius: 24px;
@@ -264,6 +265,9 @@ button:active { transform: translateY(1px); }
   margin: 0;
   white-space: pre-wrap;
   max-width: 100%;
+  align-self: center;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .cardMeta {
@@ -279,28 +283,35 @@ button:active { transform: translateY(1px); }
   align-self: end;
 }
 
-/* Placeholder bildfragment */
+/* Bildfragment */
 .memoryImage {
   position: absolute;
   z-index: 3;
   display: none;
-  border: 8px solid rgba(255, 248, 225, 0.86);
-  box-shadow: 0 8px 18px rgba(40, 25, 12, 0.22);
+  border: 9px solid rgba(255, 248, 225, 0.88);
+  box-shadow: 0 10px 22px rgba(40, 25, 12, 0.24);
   background:
     radial-gradient(circle at 35% 30%, rgba(255,255,255,0.65), transparent 18%),
     linear-gradient(135deg, #86623f, #d0b37c 48%, #6f482f);
+  background-size: cover;
+  background-position: center;
   filter: sepia(0.72) saturate(0.55) contrast(0.92);
+}
+
+.memoryImage.hasUserImage {
+  background-size: cover;
+  background-position: center;
 }
 
 .memoryImage::before {
   content: "";
   position: absolute;
   left: 50%;
-  top: -22px;
-  width: 38px;
-  height: 15px;
+  top: -23px;
+  width: 42px;
+  height: 16px;
   transform: translateX(-50%) rotate(-7deg);
-  border: 2px solid rgba(75, 66, 54, 0.55);
+  border: 2px solid rgba(75, 66, 54, 0.62);
   border-bottom: 0;
   border-radius: 14px 14px 0 0;
   background: transparent;
@@ -311,22 +322,27 @@ button:active { transform: translateY(1px); }
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 18% 22%, rgba(255,255,255,0.28), transparent 18%),
-    radial-gradient(circle at 80% 30%, rgba(255,255,255,0.18), transparent 22%),
-    linear-gradient(0deg, rgba(58, 36, 18, 0.14), transparent);
+    radial-gradient(circle at 18% 22%, rgba(255,255,255,0.24), transparent 18%),
+    radial-gradient(circle at 80% 30%, rgba(255,255,255,0.14), transparent 22%),
+    linear-gradient(0deg, rgba(58, 36, 18, 0.12), transparent);
   mix-blend-mode: screen;
 }
+
+/* Storleksklasser för text */
+.text-xs #cardText, .text-xs #nextCardText { font-size: clamp(16px, 3.9vw, 23px) !important; line-height: 1.28 !important; }
+.text-sm #cardText, .text-sm #nextCardText { font-size: clamp(18px, 4.7vw, 28px) !important; line-height: 1.24 !important; }
+.text-md #cardText, .text-md #nextCardText { font-size: clamp(22px, 5.9vw, 34px) !important; line-height: 1.16 !important; }
+.text-lg #cardText, .text-lg #nextCardText { font-size: clamp(27px, 7.2vw, 42px) !important; line-height: 1.08 !important; }
+.text-xl #cardText, .text-xl #nextCardText { font-size: clamp(34px, 9vw, 54px) !important; line-height: 0.98 !important; }
 
 /* Visual variants */
 
 .v-center-bold .cardPaper { align-content: center; }
 .v-center-bold #cardText,
 .v-center-bold #nextCardText {
-  font-size: clamp(31px, 8.6vw, 48px);
-  line-height: 1.05;
-  letter-spacing: -0.045em;
   text-align: center;
   font-weight: 700;
+  letter-spacing: -0.045em;
 }
 .v-center-bold .visualBadge {
   right: 28px;
@@ -336,7 +352,6 @@ button:active { transform: translateY(1px); }
 }
 
 .v-small-note .cardPaper {
-  align-content: start;
   padding-top: 84px;
   background:
     repeating-linear-gradient(#fff4d8 0 31px, rgba(112, 80, 44, 0.16) 32px),
@@ -345,9 +360,8 @@ button:active { transform: translateY(1px); }
 .v-small-note #cardText,
 .v-small-note #nextCardText {
   font-family: "Trebuchet MS", Verdana, sans-serif;
-  font-size: clamp(20px, 5.5vw, 30px);
-  line-height: 1.32;
   letter-spacing: -0.015em;
+  align-self: start;
   transform: rotate(-0.6deg);
 }
 .v-small-note .visualBadge {
@@ -362,15 +376,12 @@ button:active { transform: translateY(1px); }
 }
 
 .v-quote .cardPaper {
-  align-content: center;
   background:
     radial-gradient(circle at 85% 18%, rgba(155, 95, 40, 0.13), transparent 25%),
     linear-gradient(#fff0ca, #f4e4bd);
 }
 .v-quote #cardText,
 .v-quote #nextCardText {
-  font-size: clamp(26px, 7.3vw, 40px);
-  line-height: 1.17;
   font-style: italic;
   text-align: left;
   padding-left: 18px;
@@ -384,7 +395,6 @@ button:active { transform: translateY(1px); }
 }
 
 .v-catalog .cardPaper {
-  align-content: start;
   padding-top: 100px;
   background:
     linear-gradient(180deg, rgba(155, 95, 40, 0.16) 0 72px, transparent 72px),
@@ -393,9 +403,8 @@ button:active { transform: translateY(1px); }
 .v-catalog #cardText,
 .v-catalog #nextCardText {
   font-family: "Courier New", Courier, monospace;
-  font-size: clamp(22px, 6.4vw, 34px);
-  line-height: 1.18;
   letter-spacing: -0.04em;
+  align-self: start;
 }
 .v-catalog .visualBadge {
   top: 28px;
@@ -407,7 +416,6 @@ button:active { transform: translateY(1px); }
 }
 
 .v-margin .cardPaper {
-  align-content: center;
   background:
     linear-gradient(90deg, rgba(155, 95, 40, 0.22) 0 52px, transparent 52px),
     repeating-linear-gradient(#fff4d8 0 29px, rgba(112, 80, 44, 0.13) 30px);
@@ -415,8 +423,6 @@ button:active { transform: translateY(1px); }
 .v-margin #cardText,
 .v-margin #nextCardText {
   font-family: "Palatino Linotype", Palatino, serif;
-  font-size: clamp(23px, 6.8vw, 38px);
-  line-height: 1.2;
   margin-left: 40px;
   transform: rotate(0.35deg);
 }
@@ -430,7 +436,6 @@ button:active { transform: translateY(1px); }
 }
 
 .v-scrap .cardPaper {
-  align-content: center;
   transform: rotate(-0.8deg);
   background:
     linear-gradient(11deg, rgba(255,255,255,0.32), transparent 42%),
@@ -440,8 +445,6 @@ button:active { transform: translateY(1px); }
 .v-scrap #cardText,
 .v-scrap #nextCardText {
   font-family: "Arial Narrow", Arial, sans-serif;
-  font-size: clamp(29px, 8vw, 45px);
-  line-height: 1.02;
   letter-spacing: -0.055em;
 }
 .v-scrap .visualBadge {
@@ -452,7 +455,6 @@ button:active { transform: translateY(1px); }
 }
 
 .v-whisper .cardPaper {
-  align-content: end;
   padding-bottom: 96px;
   background:
     radial-gradient(circle at 20% 22%, rgba(255,255,255,0.5), transparent 30%),
@@ -460,10 +462,9 @@ button:active { transform: translateY(1px); }
 }
 .v-whisper #cardText,
 .v-whisper #nextCardText {
-  font-size: clamp(19px, 5.3vw, 29px);
-  line-height: 1.38;
   max-width: 84%;
   opacity: 0.92;
+  align-self: end;
 }
 .v-whisper .visualBadge {
   top: 72px;
@@ -472,47 +473,40 @@ button:active { transform: translateY(1px); }
   transform: rotate(-12deg);
 }
 
-/* Nya bildtyper */
+/* Bildtyper – text ligger normalt bredvid/under, inte på bild */
 .v-photo-clip .cardPaper {
-  align-content: end;
-  padding-bottom: 78px;
+  padding-bottom: 72px;
 }
 .v-photo-clip .memoryImage {
   display: block;
-  width: 54%;
-  height: 34%;
-  right: 28px;
-  top: 64px;
+  width: 58%;
+  height: 36%;
+  right: 24px;
+  top: 62px;
   transform: rotate(4deg);
 }
 .v-photo-clip #cardText,
 .v-photo-clip #nextCardText {
-  font-size: clamp(23px, 6.5vw, 36px);
-  line-height: 1.16;
-  max-width: 88%;
+  max-width: 92%;
+  align-self: end;
 }
 
-.v-corner-photo .cardPaper {
-  align-content: center;
-}
 .v-corner-photo .memoryImage {
   display: block;
-  width: 46%;
-  height: 30%;
-  right: 24px;
-  bottom: 94px;
+  width: 50%;
+  height: 32%;
+  right: 22px;
+  bottom: 98px;
   transform: rotate(-5deg);
 }
 .v-corner-photo #cardText,
 .v-corner-photo #nextCardText {
   font-family: "Palatino Linotype", Palatino, serif;
-  font-size: clamp(24px, 6.9vw, 38px);
-  line-height: 1.14;
   max-width: 66%;
 }
 
+/* Helbild får stark kontrastpanel ovanpå nedtonad bild */
 .v-full-photo .cardPaper {
-  align-content: end;
   padding-bottom: 76px;
   background: #6f482f;
 }
@@ -523,23 +517,29 @@ button:active { transform: translateY(1px); }
   height: auto;
   border: 0;
   transform: none;
-  opacity: 0.92;
+  opacity: 0.55;
+  filter: sepia(0.85) saturate(0.35) brightness(0.74) contrast(0.86) !important;
 }
 .v-full-photo .memoryImage::before {
   display: none;
 }
+.v-full-photo .cardPaper::before {
+  background: linear-gradient(180deg, rgba(20,12,6,0.15), rgba(20,12,6,0.55));
+  border-color: rgba(255,246,220,0.12);
+}
 .v-full-photo #cardText,
 .v-full-photo #nextCardText {
-  font-size: clamp(28px, 7.8vw, 44px);
-  line-height: 1.04;
-  color: #fff6df;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.45);
-  background: rgba(49, 29, 13, 0.34);
+  color: #fff7df;
+  text-shadow: 0 2px 14px rgba(0,0,0,0.75);
+  background: rgba(36, 22, 12, 0.68);
   padding: 16px;
   border-radius: 16px;
+  align-self: end;
+  max-width: 100%;
+  border: 1px solid rgba(255,246,220,0.22);
 }
 .v-full-photo .cardMeta {
-  color: rgba(255,246,220,0.82);
+  color: rgba(255,246,220,0.88);
   border-top-color: rgba(255,246,220,0.32);
 }
 
@@ -563,53 +563,31 @@ button:active { transform: translateY(1px); }
   cursor: default;
 }
 
-/* Enkla, konsekventa animationer */
-.card.animate-up {
-  animation: outUp 210ms ease-in forwards;
-}
-
-.card.animate-down {
-  animation: outDown 210ms ease-in forwards;
-}
-
-.card.animate-in-from-bottom {
-  animation: inFromBottom 210ms ease-out both;
-}
-
-.card.animate-in-from-top {
-  animation: inFromTop 210ms ease-out both;
-}
-
-.card.animate-left {
-  animation: outLeft 210ms ease-in forwards;
-}
-
-.card.animate-right {
-  animation: outRight 210ms ease-in forwards;
-}
+/* Animationer */
+.card.animate-up { animation: outUp 210ms ease-in forwards; }
+.card.animate-down { animation: outDown 210ms ease-in forwards; }
+.card.animate-in-from-bottom { animation: inFromBottom 210ms ease-out both; }
+.card.animate-in-from-top { animation: inFromTop 210ms ease-out both; }
+.card.animate-left { animation: outLeft 210ms ease-in forwards; }
+.card.animate-right { animation: outRight 210ms ease-in forwards; }
 
 @keyframes outUp {
   to { transform: translateY(-116%) scale(0.98); opacity: 0; }
 }
-
 @keyframes outDown {
   to { transform: translateY(116%) scale(0.98); opacity: 0; }
 }
-
 @keyframes inFromBottom {
   from { transform: translateY(32px) scale(0.96); opacity: 0.72; }
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
-
 @keyframes inFromTop {
   from { transform: translateY(-32px) scale(0.96); opacity: 0.72; }
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
-
 @keyframes outLeft {
   to { transform: translateX(-118%) rotate(-7deg); opacity: 0; }
 }
-
 @keyframes outRight {
   to { transform: translateX(118%) rotate(7deg); opacity: 0; }
 }
@@ -630,12 +608,12 @@ button:active { transform: translateY(1px); }
   }
 
   .v-photo-clip .memoryImage {
-    width: 58%;
-    height: 34%;
+    width: 60%;
+    height: 35%;
   }
 
   .v-corner-photo .memoryImage {
-    width: 50%;
-    height: 30%;
+    width: 52%;
+    height: 31%;
   }
 }
