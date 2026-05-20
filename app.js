@@ -141,29 +141,158 @@ function updateImageStatus() {
 }
 
 async function loadFromInput() {
-  const url = els.csvUrl.value.trim();
+  const rawUrl = els.csvUrl.value.trim();
 
-  if (!url) {
-    alert("Klistra in en CSV-länk, eller testa demofeeden.");
+  if (!rawUrl) {
+    alert("Klistra in en Google Sheet-länk, CSV-länk, eller testa demofeeden.");
     return;
   }
 
   try {
     els.loadBtn.textContent = "Laddar…";
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Kunde inte ladda: ${response.status}`);
 
-    const csv = await response.text();
-    const rows = parseCsvFirstColumn(csv);
-    if (!rows.length) throw new Error("Hittade inga kort i första kolumnen.");
+    const csvUrl = normalizeCsvUrl(rawUrl);
+    const response = await fetch(csvUrl);
 
-    localStorage.setItem("scrollwise:lastUrl", url);
-    loadDeckFromRows(rows, makeDeckKey(url), shortDeckName(url));
+    if (!response.ok) {
+      throw new Error(`Kunde inte ladda datan (${response.status}). Kontrollera att arket är delat/publicerat.`);
+    }
+
+    const rawText = await response.text();
+
+    if (looksLikeHtml(rawText)) {
+      throw new Error(
+        "Det där verkar vara en Google Sheets-webbsida, inte CSV-data.\n\n" +
+        "Testa att dela arket så att alla med länken kan läsa, eller använd Arkiv → Dela → Publicera på webben → CSV."
+      );
+    }
+
+    const parsed = parseAndCleanCsv(rawText);
+
+    if (!parsed.rows.length) {
+      throw new Error(
+        "Hittade inga användbara kort i första kolumnen.\n\n" +
+        "Kontrollera att första kolumnen innehåller dina rader, och att länken verkligen ger CSV."
+      );
+    }
+
+    localStorage.setItem("scrollwise:lastUrl", rawUrl);
+    els.csvUrl.value = rawUrl;
+
+    const ignoredText = parsed.ignored
+      ? ` · ${parsed.ignored} skräprader ignorerades`
+      : "";
+
+    loadDeckFromRows(
+      parsed.rows,
+      makeDeckKey(csvUrl),
+      `${shortDeckName(rawUrl)} · ${parsed.rows.length} kort${ignoredText}`
+    );
   } catch (err) {
-    alert(err.message + "\n\nTips: Google Sheet behöver vara publicerad som CSV.");
+    alert(err.message);
   } finally {
     els.loadBtn.textContent = "Ladda feed";
   }
+}
+
+function normalizeCsvUrl(rawUrl) {
+  let url;
+
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    throw new Error("Länken ser inte ut som en giltig URL.");
+  }
+
+  if (!url.hostname.includes("docs.google.com")) {
+    return rawUrl;
+  }
+
+  const match = url.pathname.match(/\/spreadsheets\/d\/([^/]+)/);
+  if (!match) {
+    return rawUrl;
+  }
+
+  const sheetId = match[1];
+  const gid =
+    url.searchParams.get("gid") ||
+    (url.hash.match(/gid=(\d+)/) || [])[1] ||
+    "0";
+
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+}
+
+function looksLikeHtml(text) {
+  const start = text.trim().slice(0, 500).toLowerCase();
+
+  return (
+    start.includes("<!doctype html") ||
+    start.includes("<html") ||
+    start.includes("<head") ||
+    start.includes("<body") ||
+    start.includes("#sheets-viewport") ||
+    start.includes("grid-container") ||
+    start.includes("widget-overflow")
+  );
+}
+
+function parseAndCleanCsv(csv) {
+  const rawRows = parseCsvFirstColumn(csv);
+  const rows = [];
+  let ignored = 0;
+
+  for (const row of rawRows) {
+    const cleaned = String(row || "").trim();
+
+    if (!cleaned) continue;
+
+    if (looksLikeJunkRow(cleaned)) {
+      ignored++;
+      continue;
+    }
+
+    rows.push(cleaned);
+  }
+
+  return { rows, ignored };
+}
+
+function looksLikeJunkRow(text) {
+  const t = text.trim();
+  const lower = t.toLowerCase();
+
+  if (lower === "text") return true;
+
+  if (
+    lower.startsWith("<") ||
+    lower.startsWith("</") ||
+    lower.startsWith("#") ||
+    lower.startsWith(".") ||
+    lower.startsWith("@media") ||
+    lower.startsWith("body") ||
+    lower.startsWith("html") ||
+    lower.startsWith("script") ||
+    lower.startsWith("style") ||
+    lower.includes("#sheets-viewport") ||
+    lower.includes("grid-container") ||
+    lower.includes("widget-overflow") ||
+    lower.includes("docs-titlebar") ||
+    lower.includes("docs-gm") ||
+    lower.includes("waffle") ||
+    lower.includes("goog-") ||
+    lower.includes("margin:") ||
+    lower.includes("padding:") ||
+    lower.includes("overflow:") ||
+    lower.includes("font-family:") ||
+    (lower.includes("{") && lower.includes("}") && t.length < 220)
+  ) {
+    return true;
+  }
+
+  if (/^[#.\w-]+\s*\{?$/.test(t) && t.length < 80) return true;
+  if (/^[a-z-]+\s*:\s*[^;]+;?$/.test(lower) && t.length < 120) return true;
+
+  return false;
 }
 
 function loadDeckFromRows(rows, key, label) {
@@ -179,7 +308,7 @@ function loadDeckFromRows(rows, key, label) {
     return;
   }
 
-  els.deckInfo.textContent = `${label} · ${deck.length} kort`;
+  els.deckInfo.textContent = label.includes("kort") ? label : `${label} · ${deck.length} kort`;
   els.setup.classList.add("hidden");
   els.feed.classList.remove("hidden");
 
