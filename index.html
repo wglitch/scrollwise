@@ -49,6 +49,9 @@
 
       <div class="feedTools">
         <button id="pickImagesBtnFeed" class="ghost" type="button">＋ bilder</button>
+        <button id="exportStateBtn" class="ghost" type="button">⇩ export</button>
+        <button id="importStateBtn" class="ghost" type="button">⇧ import</button>
+        <input id="stateFileInput" class="hiddenInput" type="file" accept=".json,application/json" />
         <span id="imageStatusFeed">stock-fragment</span>
       </div>
 
@@ -66,6 +69,7 @@
             <div id="visualBadge" class="visualBadge"></div>
             <div id="cardImage" class="memoryImage"></div>
             <p id="cardText"></p>
+            <button id="noteBtn" class="noteBtn" type="button" title="Marginalanteckning">✎</button>
             <div class="cardMeta">
               <span id="rowMeta"></span>
               <span id="statusMeta"></span>
@@ -82,6 +86,19 @@
       </footer>
     </section>
   </main>
+
+  <div id="noteModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalBox">
+      <h2>Marginalanteckning</h2>
+      <p id="noteCardPreview" class="noteCardPreview"></p>
+      <textarea id="noteText" placeholder="Skriv en tanke, association eller kommentar…"></textarea>
+      <div class="modalActions">
+        <button id="saveNoteBtn">Spara</button>
+        <button id="deleteNoteBtn" class="secondary">Ta bort</button>
+        <button id="closeNoteBtn" class="secondary">Stäng</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

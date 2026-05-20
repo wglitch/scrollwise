@@ -40,6 +40,16 @@ const els = {
   imageInput: document.querySelector("#imageInput"),
   imageStatus: document.querySelector("#imageStatus"),
   imageStatusFeed: document.querySelector("#imageStatusFeed"),
+  exportStateBtn: document.querySelector("#exportStateBtn"),
+  importStateBtn: document.querySelector("#importStateBtn"),
+  stateFileInput: document.querySelector("#stateFileInput"),
+  noteBtn: document.querySelector("#noteBtn"),
+  noteModal: document.querySelector("#noteModal"),
+  noteText: document.querySelector("#noteText"),
+  noteCardPreview: document.querySelector("#noteCardPreview"),
+  saveNoteBtn: document.querySelector("#saveNoteBtn"),
+  deleteNoteBtn: document.querySelector("#deleteNoteBtn"),
+  closeNoteBtn: document.querySelector("#closeNoteBtn"),
   backBtn: document.querySelector("#backBtn"),
   resetBtn: document.querySelector("#resetBtn"),
   deckInfo: document.querySelector("#deckInfo"),
@@ -81,6 +91,16 @@ function init() {
   els.pickImagesBtn.addEventListener("click", () => els.imageInput.click());
   els.pickImagesBtnFeed.addEventListener("click", () => els.imageInput.click());
   els.imageInput.addEventListener("change", handleImagePick);
+  els.exportStateBtn?.addEventListener("click", exportScrollwiseState);
+  els.importStateBtn?.addEventListener("click", () => els.stateFileInput.click());
+  els.stateFileInput?.addEventListener("change", importScrollwiseState);
+  els.noteBtn?.addEventListener("click", openNoteModal);
+  els.saveNoteBtn?.addEventListener("click", saveCurrentNote);
+  els.deleteNoteBtn?.addEventListener("click", deleteCurrentNote);
+  els.closeNoteBtn?.addEventListener("click", closeNoteModal);
+  els.noteModal?.addEventListener("click", event => {
+    if (event.target === els.noteModal) closeNoteModal();
+  });
 
   els.backBtn.addEventListener("click", showSetup);
   els.resetBtn.addEventListener("click", resetLocalMemory);
@@ -444,6 +464,9 @@ function makeVisualCard(card) {
     card,
     styleClass: style.className,
     sizeClass: getTextSizeClass(card.text, style.className),
+    toneClass: pickToneClass(),
+    posterMode: shouldUsePosterMode(card.text, style.className),
+    highlightWords: shouldHighlightWords(card.text),
     badge: pick(style.badges),
     imageSeed: makeImageSeed(card),
     userImageUrl: null,
@@ -490,20 +513,21 @@ function makeImageSeed(card) {
 
 function renderCurrent(extraClass = "") {
   const memory = getCardMemory(current.card.id);
-  els.card.className = `card activeCard ${current.styleClass} ${current.sizeClass} ${extraClass}`.trim();
+  els.card.className = `card activeCard ${current.styleClass} ${current.sizeClass} ${current.toneClass} ${current.posterMode ? "posterMode" : ""} ${extraClass}`.trim();
   els.visualBadge.textContent = current.badge;
-  els.cardText.textContent = current.card.text;
+  els.cardText.innerHTML = renderCardText(current.card.text, current.highlightWords);
   els.rowMeta.textContent = `rad ${current.card.row}`;
   els.statusMeta.textContent = formatStatus(memory);
   els.starBtn.classList.toggle("starred", Boolean(memory.starred));
+  els.noteBtn?.classList.toggle("hasNote", Boolean(memory.note && memory.note.trim()));
   applyImage(els.cardImage, current, memory);
 }
 
 function renderNext() {
   if (!next) return;
-  els.nextCard.className = `card previewCard ${next.styleClass} ${next.sizeClass}`;
+  els.nextCard.className = `card previewCard ${next.styleClass} ${next.sizeClass} ${next.toneClass} ${next.posterMode ? "posterMode" : ""}`;
   els.nextVisualBadge.textContent = next.badge;
-  els.nextCardText.textContent = next.card.text;
+  els.nextCardText.innerHTML = renderCardText(next.card.text, next.highlightWords);
   applyImage(els.nextImage, next, getCardMemory(next.card.id));
 }
 
@@ -746,6 +770,118 @@ function shortDeckName(url) {
 
 function pick(array) {
   return array[Math.floor(Math.random() * array.length)];
+}
+
+
+function pickToneClass() {
+  return pick(["tone-warm", "tone-pale", "tone-ink", "tone-blueprint", "tone-rose", ""]);
+}
+
+function shouldUsePosterMode(text, styleClass) {
+  return text.length <= 70 && styleClass !== "v-full-photo" && Math.random() < 0.32;
+}
+
+function shouldHighlightWords(text) {
+  if (text.length < 25 || text.length > 180 || Math.random() > 0.24) return [];
+  const stopwords = new Set(["och","eller","att","det","den","detta","denna","som","för","med","till","från","inte","men","har","var","är","ett","också","bara","lite","sig","mig","dig","man","jag","du","han","hon","dom","där","här","ska","kan","hur","vad","när"]);
+  const words = text.split(/\s+/);
+  const candidates = words
+    .map((word, index) => ({ word, index, clean: word.toLowerCase().replace(/[^\p{L}\p{N}åäö]/gu, "") }))
+    .filter(item => item.clean.length >= 6 && !stopwords.has(item.clean));
+  if (!candidates.length) return [];
+  candidates.sort(() => Math.random() - 0.5);
+  return candidates.slice(0, Math.random() < 0.65 ? 1 : 2).map(item => item.index);
+}
+
+function renderCardText(text, highlightIndexes = []) {
+  const parts = String(text || "").split(/(\s+)/);
+  let wordIndex = -1;
+  return parts.map(part => {
+    if (/^\s+$/.test(part)) return escapeHtml(part);
+    wordIndex++;
+    const escaped = escapeHtml(part);
+    if (!highlightIndexes.includes(wordIndex)) return escaped;
+    const alt = Math.random() < 0.5 ? " alt" : "";
+    return `<span class="swMark${alt}">${escaped}</span>`;
+  }).join("");
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function openNoteModal() {
+  if (!current) return;
+  const memory = getCardMemory(current.card.id);
+  els.noteCardPreview.textContent = current.card.text;
+  els.noteText.value = memory.note || "";
+  els.noteModal.classList.remove("hidden");
+  setTimeout(() => els.noteText.focus(), 30);
+}
+
+function closeNoteModal() {
+  els.noteModal.classList.add("hidden");
+}
+
+function saveCurrentNote() {
+  if (!current) return;
+  const memory = getCardMemory(current.card.id);
+  const note = els.noteText.value.trim();
+  saveCardMemory(current.card.id, { ...memory, note, noteUpdatedAt: note ? new Date().toISOString() : undefined });
+  renderCurrent();
+  closeNoteModal();
+}
+
+function deleteCurrentNote() {
+  if (!current) return;
+  const memory = getCardMemory(current.card.id);
+  delete memory.note;
+  delete memory.noteUpdatedAt;
+  saveCardMemory(current.card.id, memory);
+  renderCurrent();
+  closeNoteModal();
+}
+
+function exportScrollwiseState() {
+  const payload = {
+    app: "Scrollwise",
+    version: "v8",
+    exportedAt: new Date().toISOString(),
+    deckKey,
+    memory: getMemoryStore(),
+    lastUrl: localStorage.getItem("scrollwise:lastUrl") || ""
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `scrollwise-memory-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importScrollwiseState(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const payload = JSON.parse(await file.text());
+    if (!payload || payload.app !== "Scrollwise" || !payload.memory) {
+      throw new Error("Det där ser inte ut som en Scrollwise-export.");
+    }
+    setMemoryStore({ ...getMemoryStore(), ...payload.memory });
+    if (current) renderCurrent();
+    if (next) renderNext();
+    alert("Import klar. Historik, stjärnor och kommentarer har slagits ihop.");
+  } catch (err) {
+    alert(err.message || String(err));
+  } finally {
+    event.target.value = "";
+  }
 }
 
 window.addEventListener("beforeunload", releaseUserImages);

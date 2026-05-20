@@ -617,3 +617,110 @@ button:active { transform: translateY(1px); }
     height: 31%;
   }
 }
+
+
+/* v8 */
+.feedTools { flex-wrap: wrap; }
+
+.noteBtn {
+  position: absolute;
+  right: 24px;
+  bottom: 56px;
+  z-index: 6;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(110, 90, 66, 0.20);
+  color: rgba(45, 36, 25, 0.58);
+  box-shadow: none;
+  border: 1px solid rgba(88, 55, 25, 0.18);
+}
+.noteBtn.hasNote {
+  background: rgba(184, 121, 54, 0.92);
+  color: #fff7e8;
+}
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(22, 13, 7, 0.58);
+}
+.modalBox {
+  width: min(560px, 100%);
+  background: var(--paper);
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow: 0 20px 70px rgba(0,0,0,0.42);
+}
+.modalBox h2 { margin: 0 0 8px; }
+.noteCardPreview {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+  margin: 0 0 12px;
+  max-height: 88px;
+  overflow: hidden;
+}
+#noteText {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  border: 1px solid #c7b58d;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fff9e9;
+  color: var(--ink);
+  outline: none;
+  line-height: 1.35;
+}
+.modalActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.tone-warm .cardPaper {
+  background: linear-gradient(#fff1cf, #f5dfad);
+}
+.tone-pale .cardPaper {
+  background: radial-gradient(circle at 20% 15%, rgba(255,255,255,0.54), transparent 22%), linear-gradient(#fff8e8, #eadfbf);
+}
+.tone-ink .cardPaper {
+  background: linear-gradient(180deg, rgba(45,36,25,0.08), transparent 45%), linear-gradient(#efe2c0, #d8c39a);
+}
+.tone-blueprint .cardPaper {
+  background: linear-gradient(90deg, rgba(80, 44, 19, 0.04) 1px, transparent 1px) 0 0 / 20px 20px, linear-gradient(#e9efe9, #d8dfcf);
+}
+.tone-rose .cardPaper {
+  background: radial-gradient(circle at 82% 18%, rgba(155, 95, 40, 0.13), transparent 22%), linear-gradient(#fff0dd, #ead0b8);
+}
+.swMark {
+  background: rgba(184, 121, 54, 0.20);
+  color: #793b1d;
+  font-weight: 800;
+  padding: 0 0.08em;
+  border-radius: 0.12em;
+}
+.swMark.alt {
+  background: transparent;
+  color: #884d27;
+  border-bottom: 3px solid rgba(184, 121, 54, 0.42);
+}
+.posterMode #cardText,
+.posterMode #nextCardText {
+  text-transform: uppercase;
+  letter-spacing: 0.04em !important;
+  font-family: "Arial Narrow", Impact, sans-serif !important;
+  font-weight: 800;
+}
+@media (max-width: 420px) {
+  .noteBtn { right: 20px; bottom: 52px; }
+  .feedTools { gap: 6px; }
+  .feedTools .ghost { padding: 7px 9px; }
+}
