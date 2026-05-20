@@ -204,10 +204,36 @@ function normalizeCsvUrl(rawUrl) {
     throw new Error("Länken ser inte ut som en giltig URL.");
   }
 
-  if (!url.hostname.includes("docs.google.com")) {
+  const isGoogleSheets =
+    url.hostname === "docs.google.com" &&
+    url.pathname.includes("/spreadsheets/");
+
+  if (!isGoogleSheets) {
     return rawUrl;
   }
 
+  // Publicerade Google Sheets-länkar av typen:
+  // /spreadsheets/d/e/2PACX.../pub?output=csv
+  // är redan färdiga publiceringslänkar och ska INTE skrivas om till /export.
+  if (url.pathname.includes("/spreadsheets/d/e/")) {
+    if (!url.searchParams.has("output")) {
+      url.searchParams.set("output", "csv");
+    }
+    return url.toString();
+  }
+
+  // Andra redan färdiga CSV-/exportlänkar ska också lämnas i fred.
+  if (
+    url.pathname.includes("/pub") ||
+    url.pathname.includes("/export") ||
+    url.searchParams.get("format") === "csv" ||
+    url.searchParams.get("output") === "csv"
+  ) {
+    return rawUrl;
+  }
+
+  // Vanlig redigeringslänk:
+  // /spreadsheets/d/<sheetId>/edit?gid=...
   const match = url.pathname.match(/\/spreadsheets\/d\/([^/]+)/);
   if (!match) {
     return rawUrl;
