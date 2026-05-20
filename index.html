@@ -22,6 +22,13 @@
         <input id="csvUrl" type="url" placeholder="Klistra in publicerad CSV-länk…" />
         <button id="loadBtn">Ladda feed</button>
         <button id="demoBtn" class="secondary">Testa med demokort</button>
+
+        <div class="imagePickerBox">
+          <button id="pickImagesBtn" class="secondary" type="button">Välj bildminnen</button>
+          <input id="imageInput" class="hiddenInput" type="file" accept="image/*" multiple />
+          <p id="imageStatus" class="imageStatus">Inga egna bilder valda. Appen använder blekta stock-fragment.</p>
+        </div>
+
         <p class="hint">
           För Google Sheets: Arkiv → Dela → Publicera på webben → välj CSV.
           Första kolumnen blir korttext. Extra kolumner ignoreras i första versionen.
@@ -38,6 +45,11 @@
         </div>
         <button id="resetBtn" class="ghost">Nollställ</button>
       </header>
+
+      <div class="feedTools">
+        <button id="pickImagesBtnFeed" class="ghost" type="button">＋ bilder</button>
+        <span id="imageStatusFeed">stock-fragment</span>
+      </div>
 
       <div id="cardStage" class="cardStage">
         <article id="nextCard" class="card previewCard" aria-hidden="true">

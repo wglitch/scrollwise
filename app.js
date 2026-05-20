@@ -32,6 +32,11 @@ const els = {
   csvUrl: document.querySelector("#csvUrl"),
   loadBtn: document.querySelector("#loadBtn"),
   demoBtn: document.querySelector("#demoBtn"),
+  pickImagesBtn: document.querySelector("#pickImagesBtn"),
+  pickImagesBtnFeed: document.querySelector("#pickImagesBtnFeed"),
+  imageInput: document.querySelector("#imageInput"),
+  imageStatus: document.querySelector("#imageStatus"),
+  imageStatusFeed: document.querySelector("#imageStatusFeed"),
   backBtn: document.querySelector("#backBtn"),
   resetBtn: document.querySelector("#resetBtn"),
   deckInfo: document.querySelector("#deckInfo"),
@@ -58,6 +63,7 @@ let previous = null;
 let deckKey = "scrollwise:demo";
 let pointerStart = null;
 let isAnimating = false;
+let userImages = [];
 
 init();
 
@@ -67,6 +73,9 @@ function init() {
 
   els.loadBtn.addEventListener("click", loadFromInput);
   els.demoBtn.addEventListener("click", () => loadDeckFromRows(DEMO_CARDS, "scrollwise:demo", "Demofeed"));
+  els.pickImagesBtn.addEventListener("click", () => els.imageInput.click());
+  els.pickImagesBtnFeed.addEventListener("click", () => els.imageInput.click());
+  els.imageInput.addEventListener("change", handleImagePick);
   els.backBtn.addEventListener("click", showSetup);
   els.resetBtn.addEventListener("click", resetLocalMemory);
 
@@ -79,11 +88,54 @@ function init() {
   els.card.addEventListener("pointerup", onPointerUp);
   els.card.addEventListener("pointercancel", () => pointerStart = null);
 
+  updateImageStatus();
+
   const urlDeck = new URLSearchParams(location.search).get("deck");
   if (urlDeck) {
     els.csvUrl.value = urlDeck;
     loadFromInput();
   }
+}
+
+function handleImagePick(event) {
+  releaseUserImages();
+
+  const files = Array.from(event.target.files || [])
+    .filter(file => file.type.startsWith("image/"));
+
+  userImages = files.map((file, index) => ({
+    id: `${file.name}-${file.size}-${index}`,
+    name: file.name,
+    url: URL.createObjectURL(file),
+  }));
+
+  updateImageStatus();
+
+  if (current) {
+    current = refreshVisualCardImage(current);
+    renderCurrent();
+  }
+
+  if (next) {
+    next = refreshVisualCardImage(next);
+    renderNext();
+  }
+}
+
+function releaseUserImages() {
+  userImages.forEach(image => URL.revokeObjectURL(image.url));
+  userImages = [];
+}
+
+function updateImageStatus() {
+  const text = userImages.length
+    ? `${userImages.length} bildminnen valda för den här sessionen.`
+    : "Inga egna bilder valda. Appen använder blekta stock-fragment.";
+
+  els.imageStatus.textContent = text;
+  els.imageStatusFeed.textContent = userImages.length
+    ? `${userImages.length} bildminnen`
+    : "stock-fragment";
 }
 
 async function loadFromInput() {
@@ -177,11 +229,25 @@ function parseCsvFirstColumn(csv) {
 
 function makeVisualCard(card) {
   const style = pickVisualStyle(card);
-  return {
+  const visual = {
     card,
     styleClass: style.className,
     badge: pick(style.badges),
     imageSeed: makeImageSeed(card),
+    userImageUrl: null,
+  };
+
+  return refreshVisualCardImage(visual);
+}
+
+function refreshVisualCardImage(visual) {
+  const isImageStyle = visual.styleClass.includes("photo");
+
+  return {
+    ...visual,
+    userImageUrl: isImageStyle && userImages.length
+      ? pick(userImages).url
+      : null,
   };
 }
 
@@ -204,7 +270,7 @@ function renderCurrent(extraClass = "") {
   els.rowMeta.textContent = `rad ${current.card.row}`;
   els.statusMeta.textContent = formatStatus(memory);
   els.starBtn.classList.toggle("starred", Boolean(memory.starred));
-  applyImageSeed(els.cardImage, current.imageSeed, memory);
+  applyImage(els.cardImage, current, memory);
 }
 
 function renderNext() {
@@ -212,20 +278,34 @@ function renderNext() {
   els.nextCard.className = `card previewCard ${next.styleClass}`;
   els.nextVisualBadge.textContent = next.badge;
   els.nextCardText.textContent = next.card.text;
-  applyImageSeed(els.nextImage, next.imageSeed, getCardMemory(next.card.id));
+  applyImage(els.nextImage, next, getCardMemory(next.card.id));
 }
 
-function applyImageSeed(el, seed, memory) {
+function applyImage(el, visualCard, memory) {
+  el.classList.toggle("hasUserImage", Boolean(visualCard.userImageUrl));
+
   const seen = memory.seenCount || 0;
   const starredBoost = memory.starred ? 4 : 0;
-  const saturation = Math.min(1.15, 0.45 + (seen + starredBoost) * 0.08);
-  const sepia = Math.max(0.18, 0.78 - (seen + starredBoost) * 0.06);
+  const memoryStrength = seen + starredBoost;
 
-  el.style.background = `
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.65), transparent 18%),
-    linear-gradient(135deg, ${seed[0]}, ${seed[1]} 48%, ${seed[2]})
-  `;
-  el.style.filter = `sepia(${sepia}) saturate(${saturation}) contrast(0.92)`;
+  const saturation = Math.min(1.22, 0.44 + memoryStrength * 0.085);
+  const sepia = Math.max(0.12, 0.78 - memoryStrength * 0.06);
+  const brightness = Math.min(1.04, 0.93 + memoryStrength * 0.01);
+
+  if (visualCard.userImageUrl) {
+    el.style.backgroundImage = `
+      linear-gradient(0deg, rgba(70,45,25,0.12), rgba(255,248,225,0.04)),
+      url("${visualCard.userImageUrl}")
+    `;
+  } else {
+    const seed = visualCard.imageSeed;
+    el.style.backgroundImage = `
+      radial-gradient(circle at 35% 30%, rgba(255,255,255,0.65), transparent 18%),
+      linear-gradient(135deg, ${seed[0]}, ${seed[1]} 48%, ${seed[2]})
+    `;
+  }
+
+  el.style.filter = `sepia(${sepia}) saturate(${saturation}) brightness(${brightness}) contrast(0.92)`;
 }
 
 function pickVisualStyle(card) {
@@ -235,7 +315,9 @@ function pickVisualStyle(card) {
     return pick(VISUAL_STYLES.filter(s => ["v-small-note", "v-whisper", "v-margin"].includes(s.className)));
   }
 
-  if (Math.random() < 0.32) {
+  const photoChance = userImages.length ? 0.46 : 0.32;
+
+  if (Math.random() < photoChance) {
     const photoStyles = textLength < 110
       ? ["v-photo-clip", "v-corner-photo", "v-full-photo"]
       : ["v-photo-clip", "v-corner-photo"];
@@ -385,6 +467,7 @@ function markSeen(id) {
 
   if (current && current.card.id === id) {
     els.statusMeta.textContent = formatStatus(getCardMemory(id));
+    applyImage(els.cardImage, current, getCardMemory(id));
   }
 }
 
@@ -431,3 +514,5 @@ function shortDeckName(url) {
 function pick(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
+
+window.addEventListener("beforeunload", releaseUserImages);

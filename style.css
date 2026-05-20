@@ -30,6 +30,7 @@ button, input { font: inherit; }
 }
 
 .hidden { display: none !important; }
+.hiddenInput { display: none; }
 
 .setup {
   min-height: calc(100vh - 40px);
@@ -113,8 +114,14 @@ button:active { transform: translateY(1px); }
 
 .secondary { background: #6e5a42; }
 
+.imagePickerBox {
+  margin-top: 12px;
+  padding-top: 2px;
+}
+
+.imageStatus,
 .hint {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   color: var(--muted);
   line-height: 1.45;
   font-size: 14px;
@@ -123,8 +130,8 @@ button:active { transform: translateY(1px); }
 .feed {
   min-height: calc(100vh - 40px);
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 14px;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 10px;
 }
 
 .topbar {
@@ -153,6 +160,20 @@ button:active { transform: translateY(1px); }
   font-size: 13px;
 }
 
+.feedTools {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: rgba(255, 242, 215, 0.74);
+  font-size: 13px;
+  min-height: 34px;
+}
+
+.feedTools .ghost {
+  padding: 7px 12px;
+}
+
 .cardStage {
   position: relative;
   min-height: 0;
@@ -165,7 +186,8 @@ button:active { transform: translateY(1px); }
 .card {
   position: absolute;
   width: min(100%, 440px);
-  min-height: 62vh;
+  height: min(68vh, 620px);
+  min-height: 510px;
   display: grid;
   will-change: transform, opacity;
 }
@@ -204,7 +226,7 @@ button:active { transform: translateY(1px); }
     inset 0 0 0 1px rgba(82, 48, 18, 0.06),
     0 24px 55px var(--shadow);
   overflow: hidden;
-  min-height: 62vh;
+  height: 100%;
 }
 
 .cardPaper::before {
@@ -457,10 +479,10 @@ button:active { transform: translateY(1px); }
 }
 .v-photo-clip .memoryImage {
   display: block;
-  width: 42%;
-  height: 27%;
-  right: 36px;
-  top: 72px;
+  width: 54%;
+  height: 34%;
+  right: 28px;
+  top: 64px;
   transform: rotate(4deg);
 }
 .v-photo-clip #cardText,
@@ -475,10 +497,10 @@ button:active { transform: translateY(1px); }
 }
 .v-corner-photo .memoryImage {
   display: block;
-  width: 34%;
-  height: 22%;
-  right: 28px;
-  bottom: 80px;
+  width: 46%;
+  height: 30%;
+  right: 24px;
+  bottom: 94px;
   transform: rotate(-5deg);
 }
 .v-corner-photo #cardText,
@@ -486,7 +508,7 @@ button:active { transform: translateY(1px); }
   font-family: "Palatino Linotype", Palatino, serif;
   font-size: clamp(24px, 6.9vw, 38px);
   line-height: 1.14;
-  max-width: 72%;
+  max-width: 66%;
 }
 
 .v-full-photo .cardPaper {
@@ -600,4 +622,20 @@ button:active { transform: translateY(1px); }
     padding-inline: 8px;
   }
   .actions { gap: 6px; }
+
+  .card {
+    width: calc(100vw - 28px);
+    height: min(68vh, 560px);
+    min-height: 500px;
+  }
+
+  .v-photo-clip .memoryImage {
+    width: 58%;
+    height: 34%;
+  }
+
+  .v-corner-photo .memoryImage {
+    width: 50%;
+    height: 30%;
+  }
 }
