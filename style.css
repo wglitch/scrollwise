@@ -1295,3 +1295,151 @@ body::after {
     height: 40px;
   }
 }
+
+
+/* v11.2 — nav icon polish + cleaner brand */
+.brandStamp.textOnlyStamp {
+  padding: 4px 9px;
+  background: rgba(255, 248, 226, 0.08);
+  border-color: rgba(66, 52, 37, 0.08);
+}
+
+.textOnlyStamp .watermarkText {
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 12px;
+  letter-spacing: 0.20em !important;
+  text-transform: uppercase;
+  color: rgba(66, 52, 37, 0.46) !important;
+  font-weight: 700;
+}
+
+.brandIconMark {
+  display: none !important;
+}
+
+/* Keep the bottom rail calm; the icon itself should carry the affordance */
+.compactActions,
+.actions {
+  background: rgba(79, 61, 38, 0.28) !important;
+  border: 1px solid rgba(255, 248, 226, 0.16) !important;
+  padding: 7px !important;
+  box-shadow: 0 8px 22px rgba(44, 34, 21, 0.12) !important;
+}
+
+.bottomIcon.imageNavIcon {
+  min-height: 48px !important;
+  height: 48px !important;
+  padding: 0 !important;
+  background: rgba(255, 248, 226, 0.18) !important;
+  border: 1px solid rgba(66, 52, 37, 0.08) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+.imageNavIcon img {
+  width: 50px !important;
+  height: 50px !important;
+  max-width: 70% !important;
+  max-height: 70% !important;
+  object-fit: contain !important;
+  opacity: 0.96 !important;
+  filter: saturate(0.96) contrast(1.06) brightness(0.96) !important;
+  mix-blend-mode: multiply;
+  background: transparent !important;
+  display: block !important;
+}
+
+.imageNavIcon.starred {
+  background: rgba(184, 121, 54, 0.68) !important;
+}
+
+.imageNavIcon.starred img {
+  opacity: 1 !important;
+  filter: saturate(1.12) contrast(1.08) brightness(0.98) !important;
+}
+
+.imageNavIcon:active img {
+  transform: scale(0.94);
+}
+
+/* Desktop: stop icons from ballooning over the card */
+@media (min-width: 700px) {
+  .compactActions,
+  .actions {
+    max-width: 420px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .bottomIcon.imageNavIcon {
+    height: 46px !important;
+    min-height: 46px !important;
+  }
+
+  .imageNavIcon img {
+    width: 44px !important;
+    height: 44px !important;
+    max-width: 68% !important;
+    max-height: 68% !important;
+  }
+}
+
+/* Mobile: a little larger and clearer, no box-in-box feeling */
+@media (max-width: 420px) {
+  .compactActions,
+  .actions {
+    left: max(10px, env(safe-area-inset-left)) !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    padding: 7px !important;
+    gap: 7px !important;
+  }
+
+  .bottomIcon.imageNavIcon {
+    height: 50px !important;
+    min-height: 50px !important;
+  }
+
+  .imageNavIcon img {
+    width: 54px !important;
+    height: 54px !important;
+    max-width: 74% !important;
+    max-height: 74% !important;
+    opacity: 0.98 !important;
+  }
+}
+
+/* Maker card: use actual app icon, not the text stamp */
+.makerAppIcon {
+  width: 76px;
+  height: 76px;
+  display: block;
+  margin: 4px auto 12px;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(45, 36, 25, 0.16);
+  opacity: 0.94;
+}
+
+.makerFeedback {
+  display: inline-block;
+  color: rgba(66, 52, 37, 0.78) !important;
+  text-decoration: none !important;
+  border: 1px solid rgba(66, 52, 37, 0.16) !important;
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: rgba(255, 248, 226, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+}
+
+.makerFeedback:visited,
+.makerFeedback:hover,
+.makerFeedback:active {
+  color: rgba(66, 52, 37, 0.82) !important;
+  text-decoration: none !important;
+}
+
+.makerFeedback:hover {
+  background: rgba(255, 248, 226, 0.48);
+  border-color: rgba(66, 52, 37, 0.26) !important;
+}
