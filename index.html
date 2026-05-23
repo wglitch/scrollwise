@@ -45,9 +45,11 @@
     <section id="feed" class="feed hidden">
       <button id="backBtn" class="compatHidden" type="button">Källa</button>
       <button id="resetBtn" class="compatHidden" type="button">Nollställ</button>
-      <header class="watermarkHeader" aria-hidden="true">
-        <div class="watermarkSeal">S</div>
-        <div class="watermarkText">scrollwise</div>
+      <header class="watermarkHeader">
+        <button id="brandBtn" class="brandStamp" type="button" title="Om Scrollwise">
+          <span class="brandIconMark">▤</span>
+          <span class="watermarkText">scrollwise</span>
+        </button>
         <span id="deckInfo" class="compatDeckInfo">Minnets bibliotek</span>
       </header>
 
@@ -70,7 +72,7 @@
             <div id="visualBadge" class="visualBadge"></div>
             <div id="cardImage" class="memoryImage"></div>
             <p id="cardText"></p>
-            <button id="noteBtn" class="noteBtn" type="button" title="Marginalanteckning">✎</button>
+            <button id="noteBtn" class="noteBtn cardMenuBtn" type="button" title="Marginalanteckning">✎</button>
             <div class="cardMeta">
               <span id="rowMeta"></span>
               <span id="statusMeta"></span>
@@ -80,10 +82,10 @@
       </div>
 
       <footer class="actions compactActions">
-        <button id="prevBtn" class="bottomIcon" title="Tillbaka ett kort">←</button>
-        <button id="starBtn" class="bottomIcon" title="Visa oftare">★</button>
-        <button id="nextBtn" class="bottomIcon" title="Nästa kort">→</button>
-        <button id="settingsBtn" class="bottomIcon" title="Inställningar">⚙</button>
+        <button id="prevBtn" class="bottomIcon cardArrowIcon" title="Tillbaka ett kort"><span class="miniCards">▤</span><span class="arrowGlyph">←</span></button>
+        <button id="starBtn" class="bottomIcon starCardIcon" title="Visa oftare"><span class="miniCards">▤</span><span class="starGlyph">★</span></button>
+        <button id="nextBtn" class="bottomIcon cardArrowIcon" title="Nästa kort"><span class="arrowGlyph">→</span><span class="miniCards">▤</span></button>
+        <button id="settingsBtn" class="bottomIcon settingsCardIcon" title="Inställningar"><span class="miniCards">▤</span><span class="dotGlyph">•••</span></button>
       </footer>
     </section>
   </main>
@@ -124,6 +126,31 @@
   <div id="reviewModal" class="modal hidden" role="dialog" aria-modal="true"><div class="modalBox largeBox"><h2 id="reviewTitle">Granska kort</h2><p id="reviewSummary" class="modalHelp"></p><div id="reviewCards" class="reviewCards"></div><div class="modalActions stickyActions"><button id="reviewAddBtn">Lägg till</button><button id="reviewCancelBtn" class="secondary">Avbryt</button></div></div></div>
   <div id="fixModal" class="modal hidden" role="dialog" aria-modal="true"><div class="modalBox"><h2>Fixa skav</h2><p class="modalHelp">Laga bara det som skaver och fortsätt skrolla.</p><textarea id="fixText"></textarea><div class="modalActions"><button id="fixSaveBtn">Spara text</button><button id="mergePrevBtn" class="secondary">⬆ Slå ihop med föregående</button><button id="mergeNextBtn" class="secondary">⬇ Slå ihop med nästa</button><button id="deleteCardBtn" class="secondary">Ta bort kort</button><button id="fixCancelBtn" class="secondary">Stäng</button></div></div></div>
   <div id="toast" class="toast hidden"></div>
+
+
+  <div id="brandModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalBox makerBox">
+      <button id="closeBrandBtn" class="smallRound makerClose" type="button">×</button>
+      <div class="makerMark">▤</div>
+      <h2>Scrollwise</h2>
+      <p class="makerSub">Wglitch Dream Machine · 2026</p>
+      <p class="makerText">A small machine for wandering through old thoughts, forgotten ideas and strange notes.</p>
+      <p class="makerText">Feedback welcome.</p>
+    </div>
+  </div>
+
+  <div id="cardMenuModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalBox cardMenuBox">
+      <h2>Kort</h2>
+      <p id="cardMenuPreview" class="noteCardPreview"></p>
+      <div id="cardMenuMeta" class="cardMenuMeta"></div>
+      <div class="settingsGrid">
+        <button id="cardNoteBtn" class="settingsAction" type="button">✎ Anteckna</button>
+        <button id="cardFixBtn" class="settingsAction" type="button">🛠 Fixa skav</button>
+        <button id="cardCloseBtn" class="settingsAction" type="button">Stäng</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

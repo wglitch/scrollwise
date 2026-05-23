@@ -44,6 +44,15 @@ const els = {
   importStateBtn: document.querySelector("#importStateBtn"),
   stateFileInput: document.querySelector("#stateFileInput"),
   noteBtn: document.querySelector("#noteBtn"),
+  brandBtn: document.querySelector("#brandBtn"),
+  brandModal: document.querySelector("#brandModal"),
+  closeBrandBtn: document.querySelector("#closeBrandBtn"),
+  cardMenuModal: document.querySelector("#cardMenuModal"),
+  cardMenuPreview: document.querySelector("#cardMenuPreview"),
+  cardMenuMeta: document.querySelector("#cardMenuMeta"),
+  cardNoteBtn: document.querySelector("#cardNoteBtn"),
+  cardFixBtn: document.querySelector("#cardFixBtn"),
+  cardCloseBtn: document.querySelector("#cardCloseBtn"),
   noteModal: document.querySelector("#noteModal"),
   noteText: document.querySelector("#noteText"),
   noteCardPreview: document.querySelector("#noteCardPreview"),
@@ -131,13 +140,33 @@ function init() {
   els.exportStateBtn?.addEventListener("click", exportScrollwiseState);
   els.importStateBtn?.addEventListener("click", () => els.stateFileInput.click());
   els.stateFileInput?.addEventListener("change", importScrollwiseState);
-  els.noteBtn?.addEventListener("click", openNoteModal);
+  els.noteBtn?.addEventListener("click", openCardMenu);
   els.saveNoteBtn?.addEventListener("click", saveCurrentNote);
   els.deleteNoteBtn?.addEventListener("click", deleteCurrentNote);
   els.closeNoteBtn?.addEventListener("click", closeNoteModal);
   els.noteModal?.addEventListener("click", event => {
     if (event.target === els.noteModal) closeNoteModal();
   });
+
+  els.brandBtn?.addEventListener("click", () => els.brandModal?.classList.remove("hidden"));
+  els.closeBrandBtn?.addEventListener("click", () => els.brandModal?.classList.add("hidden"));
+  els.brandModal?.addEventListener("click", event => {
+    if (event.target === els.brandModal) els.brandModal.classList.add("hidden");
+  });
+  els.cardNoteBtn?.addEventListener("click", () => {
+    closeCardMenu();
+    openNoteModal();
+  });
+  els.cardFixBtn?.addEventListener("click", () => {
+    closeCardMenu();
+    if (typeof openFixModal === "function") openFixModal();
+    else openNoteModal();
+  });
+  els.cardCloseBtn?.addEventListener("click", closeCardMenu);
+  els.cardMenuModal?.addEventListener("click", event => {
+    if (event.target === els.cardMenuModal) closeCardMenu();
+  });
+
 
   els.backBtn?.addEventListener("click", showSetup);
   els.resetBtn?.addEventListener("click", resetLocalMemory);
@@ -556,6 +585,7 @@ function makeVisualCard(card) {
     posterMode: shouldUsePosterMode(card.text, style.className),
     highlightWords: shouldHighlightWords(card.text),
     badge: pick(style.badges),
+    imageStyleClass: pickImageStyleClass(style.className),
     imageSeed: makeImageSeed(card),
     userImageUrl: null,
   };
@@ -611,7 +641,7 @@ function makeImageSeed(card) {
 function renderCurrent(extraClass = "") {
   if (typeof updateAmbientBackground === "function") updateAmbientBackground();
   const memory = getCardMemory(current.card.id);
-  els.card.className = `card activeCard ${current.styleClass} ${current.sizeClass} ${current.toneClass} ${current.posterMode ? "posterMode" : ""} ${extraClass}`.trim();
+  els.card.className = `card activeCard ${current.styleClass} ${current.sizeClass} ${current.toneClass} ${current.imageStyleClass || ""} ${current.posterMode ? "posterMode" : ""} ${extraClass}`.trim();
   els.visualBadge.textContent = current.badge;
   els.cardText.innerHTML = renderCardText(current.card.text, current.highlightWords);
   els.rowMeta.textContent = `rad ${current.card.row}`;
@@ -623,7 +653,7 @@ function renderCurrent(extraClass = "") {
 
 function renderNext() {
   if (!next) { if (els.nextCardText) els.nextCardText.textContent = ""; return; }
-  els.nextCard.className = `card previewCard ${next.styleClass} ${next.sizeClass} ${next.toneClass} ${next.posterMode ? "posterMode" : ""}`;
+  els.nextCard.className = `card previewCard ${next.styleClass} ${next.sizeClass} ${next.toneClass} ${next.imageStyleClass || ""} ${next.posterMode ? "posterMode" : ""}`;
   els.nextVisualBadge.textContent = next.badge;
   els.nextCardText.innerHTML = renderCardText(next.card.text, next.highlightWords);
   applyImage(els.nextImage, next, getCardMemory(next.card.id));
@@ -1233,5 +1263,31 @@ function parseHex(hex) {
 }
 
 updateAmbientBackground();
+
+
+function pickImageStyleClass(styleClass) {
+  if (!styleClass || !styleClass.includes("photo")) return "";
+  return pick(["image-style-soft", "image-style-dust", "image-style-color", "image-style-green", "image-style-pinned", "image-style-wide", ""]);
+}
+
+function openCardMenu() {
+  if (!current) return;
+  const memory = getCardMemory(current.card.id);
+  if (els.cardMenuPreview) els.cardMenuPreview.textContent = current.card.text;
+  const seen = memory.seenCount || 0;
+  const note = memory.note && memory.note.trim() ? "Marginalanteckning finns" : "Ingen marginalanteckning";
+  if (els.cardMenuMeta) {
+    els.cardMenuMeta.innerHTML = `
+      <div>Rad: ${escapeHtml(String(current.card.row || "—"))}</div>
+      <div>Visningar: ${seen}</div>
+      <div>${escapeHtml(note)}</div>
+    `;
+  }
+  els.cardMenuModal?.classList.remove("hidden");
+}
+
+function closeCardMenu() {
+  els.cardMenuModal?.classList.add("hidden");
+}
 
 window.addEventListener("beforeunload", releaseUserImages);

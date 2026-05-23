@@ -1092,3 +1092,166 @@ body::after {
 .cardPaper {
   border-color: rgba(92, 70, 43, 0.16) !important;
 }
+
+
+/* v11 identity pass */
+.watermarkHeader {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.brandStamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(66, 52, 37, 0.12);
+  background: rgba(255, 248, 226, 0.16);
+  color: rgba(66, 52, 37, 0.42);
+  box-shadow: none;
+}
+
+.brandIconMark {
+  font-size: 17px;
+  letter-spacing: -0.12em;
+  transform: rotate(-2deg);
+}
+
+.watermarkText {
+  opacity: 1 !important;
+  color: rgba(66, 52, 37, 0.68);
+  font-weight: 700;
+}
+
+.makerBox {
+  position: relative;
+  text-align: center;
+}
+
+.makerClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
+.makerMark {
+  width: 64px;
+  height: 64px;
+  margin: 8px auto 12px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(66,52,37,0.18);
+  background: rgba(255,248,226,0.44);
+  color: rgba(66,52,37,0.50);
+  font-size: 35px;
+  letter-spacing: -0.16em;
+  transform: rotate(-3deg);
+}
+
+.makerSub {
+  color: var(--muted);
+  font-family: "Courier New", Courier, monospace;
+  letter-spacing: 0.04em;
+  margin: 4px 0 16px;
+}
+
+.makerText {
+  color: var(--ink);
+  line-height: 1.45;
+  margin: 8px auto;
+  max-width: 34ch;
+}
+
+.cardArrowIcon,
+.starCardIcon,
+.settingsCardIcon {
+  display: grid !important;
+  place-items: center;
+  grid-auto-flow: column;
+  gap: 2px;
+}
+
+.miniCards {
+  font-size: 22px;
+  letter-spacing: -0.18em;
+  transform: rotate(-3deg);
+  opacity: 0.88;
+}
+
+.arrowGlyph,
+.starGlyph,
+.dotGlyph {
+  font-size: 20px;
+  font-weight: 800;
+  margin-left: 2px;
+}
+
+.starGlyph {
+  font-size: 18px;
+  transform: translateY(-1px);
+}
+
+.dotGlyph {
+  font-size: 15px;
+  letter-spacing: -0.05em;
+}
+
+.cardMeta {
+  opacity: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+}
+
+.noteBtn.cardMenuBtn {
+  width: 36px;
+  height: 36px;
+  bottom: 24px;
+  right: 24px;
+  font-size: 20px;
+  font-weight: 800;
+  background: rgba(255, 248, 226, 0.34);
+  color: rgba(66, 52, 37, 0.58);
+  border: 1px solid rgba(66, 52, 37, 0.12);
+}
+
+.noteBtn.cardMenuBtn.hasNote {
+  background: rgba(184, 121, 54, 0.78);
+  color: #fff7e8;
+}
+
+.cardMenuMeta {
+  margin: 12px 0 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 249, 233, 0.62);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.image-style-soft .memoryImage { filter: sepia(0.26) saturate(0.78) brightness(1.02) contrast(0.92) !important; }
+.image-style-dust .memoryImage { filter: sepia(0.65) saturate(0.42) brightness(1.04) contrast(0.82) !important; opacity: 0.88; }
+.image-style-color .memoryImage { filter: sepia(0.08) saturate(0.95) brightness(0.98) contrast(0.90) !important; }
+.image-style-green .memoryImage { filter: sepia(0.34) saturate(0.58) hue-rotate(18deg) brightness(0.98) contrast(0.86) !important; }
+.image-style-pinned .memoryImage {
+  border-width: 11px;
+  box-shadow: 0 12px 25px rgba(40, 25, 12, 0.27), -10px -8px 0 rgba(255,248,226,0.24);
+}
+.image-style-wide.v-photo-clip .memoryImage {
+  width: 68%;
+  height: 34%;
+  right: 18px;
+  top: 58px;
+  transform: rotate(-2deg);
+}
+.image-style-wide.v-corner-photo .memoryImage {
+  width: 60%;
+  height: 30%;
+  right: 20px;
+  bottom: 96px;
+  transform: rotate(3deg);
+}
