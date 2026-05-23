@@ -817,3 +817,173 @@ button:active { transform: translateY(1px); }
   min-height: 22px !important;
   opacity: 0.65;
 }
+
+
+
+/* v10 — ljus arkivyta, vattenstämpel, mindre appkänsla */
+:root {
+  --archive-bg: #d9cfb9;
+  --archive-bg-2: #eee4cf;
+  --archive-fiber: rgba(93, 75, 52, 0.055);
+  --archive-ink: #423425;
+}
+
+html,
+body {
+  color: var(--archive-ink);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 250, 235, 0.72), transparent 30%),
+    radial-gradient(circle at 78% 88%, rgba(150, 126, 88, 0.18), transparent 34%),
+    linear-gradient(90deg, var(--archive-fiber) 1px, transparent 1px) 0 0 / 34px 34px,
+    linear-gradient(0deg, rgba(93, 75, 52, 0.035) 1px, transparent 1px) 0 0 / 34px 34px,
+    linear-gradient(135deg, var(--archive-bg-2), var(--archive-bg) 58%, #c9bda6);
+}
+
+/* väldigt svaga "papper i lager" i bakgrunden */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 24px;
+  border: 1px solid rgba(93, 75, 52, 0.045);
+  background: rgba(255, 248, 226, 0.16);
+  box-shadow: 0 12px 38px rgba(70, 54, 33, 0.055);
+}
+
+body::before {
+  width: min(430px, 78vw);
+  height: 68vh;
+  left: 50%;
+  top: 15vh;
+  transform: translateX(-52%) rotate(-4deg);
+}
+
+body::after {
+  width: min(410px, 74vw);
+  height: 64vh;
+  left: 50%;
+  top: 18vh;
+  transform: translateX(-45%) rotate(3deg);
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+}
+
+.feed {
+  min-height: 100svh;
+  grid-template-rows: auto 0 1fr auto !important;
+  gap: 0 !important;
+  padding-top: max(10px, env(safe-area-inset-top));
+}
+
+/* Toppen är inte längre en appbar, bara en nästan osynlig stämpel */
+.watermarkHeader {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  opacity: 0.20;
+  color: rgba(66, 52, 37, 0.82);
+  user-select: none;
+  pointer-events: none;
+}
+
+.watermarkSeal {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 800;
+  border: 1px solid rgba(66, 52, 37, 0.38);
+  background: rgba(255, 248, 226, 0.20);
+}
+
+.watermarkText {
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.hiddenFeedTools {
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden;
+  opacity: 0;
+}
+
+/* Kortet ska kännas mer som papper i hög än som UI-panel */
+.cardPaper {
+  box-shadow:
+    inset 0 0 0 1px rgba(82, 48, 18, 0.045),
+    0 20px 42px rgba(79, 61, 38, 0.18) !important;
+}
+
+.previewCard {
+  opacity: 0.76 !important;
+  filter: saturate(0.94) brightness(0.98) !important;
+  transform: translateY(26px) scale(0.965) rotate(0.35deg) !important;
+}
+
+.previewCard .cardPaper {
+  background:
+    linear-gradient(90deg, rgba(80, 44, 19, 0.035) 1px, transparent 1px) 0 0 / 18px 18px,
+    linear-gradient(#f4ead3, #ead9b9) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(82, 48, 18, 0.035),
+    0 12px 26px rgba(79, 61, 38, 0.12) !important;
+}
+
+/* Bottenrad passar bättre mot ljus arkivyta */
+.compactActions,
+.actions {
+  background: rgba(79, 61, 38, 0.36) !important;
+  border: 1px solid rgba(255, 248, 226, 0.18);
+}
+
+.bottomIcon,
+.actions button {
+  background: rgba(255, 248, 226, 0.30) !important;
+  color: rgba(46, 34, 22, 0.92) !important;
+  border-color: rgba(66, 52, 37, 0.10) !important;
+}
+
+.bottomIcon.starred,
+.actions button.starred {
+  background: rgba(184, 121, 54, 0.88) !important;
+  color: #fff7e8 !important;
+}
+
+.toast {
+  background: rgba(66, 52, 37, 0.93) !important;
+}
+
+@media (max-width: 420px) {
+  .watermarkHeader {
+    height: 30px;
+    opacity: 0.16;
+  }
+
+  .watermarkText {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+  }
+
+  .watermarkSeal {
+    width: 21px;
+    height: 21px;
+    font-size: 12px;
+  }
+
+  .card {
+    height: min(66svh, 540px) !important;
+    min-height: 460px !important;
+  }
+}
