@@ -67,6 +67,40 @@ const els = {
   nextBtn: document.querySelector("#nextBtn"),
   prevBtn: document.querySelector("#prevBtn"),
   starBtn: document.querySelector("#starBtn"),
+  settingsBtn: document.querySelector("#settingsBtn"),
+  settingsModal: document.querySelector("#settingsModal"),
+  closeSettingsBtn: document.querySelector("#closeSettingsBtn"),
+  settingsSheetBtn: document.querySelector("#settingsSheetBtn"),
+  settingsCsvBtn: document.querySelector("#settingsCsvBtn"),
+  settingsImagesBtn: document.querySelector("#settingsImagesBtn"),
+  settingsImageCount: document.querySelector("#settingsImageCount"),
+  pasteNotesBtn: document.querySelector("#pasteNotesBtn"),
+  sheetModal: document.querySelector("#sheetModal"),
+  sheetUrlInput: document.querySelector("#sheetUrlInput"),
+  sheetAddDirectBtn: document.querySelector("#sheetAddDirectBtn"),
+  sheetReviewBtn: document.querySelector("#sheetReviewBtn"),
+  sheetCancelBtn: document.querySelector("#sheetCancelBtn"),
+  pasteModal: document.querySelector("#pasteModal"),
+  pasteInput: document.querySelector("#pasteInput"),
+  pasteSuggestBtn: document.querySelector("#pasteSuggestBtn"),
+  pasteCancelBtn: document.querySelector("#pasteCancelBtn"),
+  reviewModal: document.querySelector("#reviewModal"),
+  reviewSummary: document.querySelector("#reviewSummary"),
+  reviewCards: document.querySelector("#reviewCards"),
+  reviewAddBtn: document.querySelector("#reviewAddBtn"),
+  reviewCancelBtn: document.querySelector("#reviewCancelBtn"),
+  fixCardBtn: document.querySelector("#fixCardBtn"),
+  fixModal: document.querySelector("#fixModal"),
+  fixText: document.querySelector("#fixText"),
+  fixSaveBtn: document.querySelector("#fixSaveBtn"),
+  mergePrevBtn: document.querySelector("#mergePrevBtn"),
+  mergeNextBtn: document.querySelector("#mergeNextBtn"),
+  deleteCardBtn: document.querySelector("#deleteCardBtn"),
+  fixCancelBtn: document.querySelector("#fixCancelBtn"),
+  backupLibraryBtn: document.querySelector("#backupLibraryBtn"),
+  restoreLibraryBtn: document.querySelector("#restoreLibraryBtn"),
+  restoreFileInput: document.querySelector("#restoreFileInput"),
+  toast: document.querySelector("#toast"),
 };
 
 let deck = [];
@@ -109,7 +143,30 @@ function init() {
   els.nextBtn.addEventListener("click", () => advance("up"));
   els.prevBtn.addEventListener("click", goBack);
   els.starBtn.addEventListener("click", starAndAdvance);
-  els.lessBtn.addEventListener("click", lessAndAdvance);
+  els.settingsBtn?.addEventListener("click", openSettings);
+  els.closeSettingsBtn?.addEventListener("click", closeSettings);
+  els.settingsModal?.addEventListener("click", e => { if (e.target === els.settingsModal) closeSettings(); });
+  els.settingsCsvBtn?.addEventListener("click", () => { closeSettings(); els.csvFileInput.click(); });
+  els.settingsImagesBtn?.addEventListener("click", () => { closeSettings(); els.imageInput.click(); });
+  els.settingsSheetBtn?.addEventListener("click", openSheetModal);
+  els.sheetCancelBtn?.addEventListener("click", closeSheetModal);
+  els.sheetAddDirectBtn?.addEventListener("click", () => addSheetCollection(false));
+  els.sheetReviewBtn?.addEventListener("click", () => addSheetCollection(true));
+  els.pasteNotesBtn?.addEventListener("click", openPasteModal);
+  els.pasteCancelBtn?.addEventListener("click", closePasteModal);
+  els.pasteSuggestBtn?.addEventListener("click", reviewPastedNotes);
+  els.reviewCancelBtn?.addEventListener("click", closeReviewModal);
+  els.reviewAddBtn?.addEventListener("click", commitReviewRows);
+  els.fixCardBtn?.addEventListener("click", openFixModal);
+  els.fixCancelBtn?.addEventListener("click", closeFixModal);
+  els.fixSaveBtn?.addEventListener("click", saveFixedCard);
+  els.mergePrevBtn?.addEventListener("click", () => mergeCurrentCard("prev"));
+  els.mergeNextBtn?.addEventListener("click", () => mergeCurrentCard("next"));
+  els.deleteCardBtn?.addEventListener("click", deleteCurrentCard);
+  els.backupLibraryBtn?.addEventListener("click", backupFullLibrary);
+  els.restoreLibraryBtn?.addEventListener("click", () => els.restoreFileInput.click());
+  els.restoreFileInput?.addEventListener("change", restoreFullLibrary);
+
 
   els.card.addEventListener("pointerdown", onPointerDown);
   els.card.addEventListener("pointerup", onPointerUp);
@@ -145,8 +202,9 @@ async function handleImagePick(event) {
       });
     }
 
-    userImages = processed;
+    userImages = [...userImages, ...processed].slice(-100);
     await idbSet("userImages", userImages);
+    if (userImages.length >= 100) showToast("100 bildminnen används. Nya bilder ersätter de äldsta.");
 
     updateImageStatus();
 
@@ -184,8 +242,9 @@ function updateImageStatus(overrideText = null) {
   els.imageStatusFeed.textContent = overrideText
     ? overrideText
     : userImages.length
-      ? `${userImages.length} bildminnen`
+      ? `${userImages.length}/100 bildminnen`
       : "stock-fragment";
+  if (els.settingsImageCount) els.settingsImageCount.textContent = `${userImages.length} / 100 sparade`;
 }
 
 
@@ -222,13 +281,8 @@ async function handleLocalCsvPick(event) {
     const savedDeckKey = makeDeckKey(`local:${file.name}:${file.size}:${file.lastModified}`);
     const savedLabel = `${file.name} · ${parsed.rows.length} kort${ignoredText}`;
 
-    loadDeckFromRows(
-      parsed.rows,
-      savedDeckKey,
-      savedLabel
-    );
-
-    saveLibraryToIndexedDb(parsed.rows, savedDeckKey, savedLabel, `local:${file.name}`);
+    await addRowsToLibrary(parsed.rows, file.name || "CSV-fil");
+    showToast(`📚 ${parsed.rows.length} kort tillagda. Biblioteket innehåller ${deck.length} minnen.`);
 
     // Gör det möjligt att välja samma fil igen senare.
     event.target.value = "";
@@ -289,13 +343,8 @@ async function loadFromInput() {
     const savedDeckKey = makeDeckKey(csvUrl);
     const savedLabel = `${shortDeckName(rawUrl)} · ${parsed.rows.length} kort${ignoredText}`;
 
-    loadDeckFromRows(
-      parsed.rows,
-      savedDeckKey,
-      savedLabel
-    );
-
-    saveLibraryToIndexedDb(parsed.rows, savedDeckKey, savedLabel, csvUrl);
+    await addRowsToLibrary(parsed.rows, shortDeckName(rawUrl));
+    showToast(`📚 ${parsed.rows.length} kort tillagda. Biblioteket innehåller ${deck.length} minnen.`);
   } catch (err) {
     alert(err.message);
   } finally {
@@ -434,7 +483,10 @@ function loadDeckFromRows(rows, key, label) {
   previous = null;
 
   deck = rows
-    .map((text, index) => ({ id: String(index + 1), row: index + 1, text: String(text || "").trim() }))
+    .map((item, index) => {
+      if (typeof item === "object" && item.text !== undefined) return { id: item.id || String(index + 1), row: item.row || index + 1, text: String(item.text || "").trim(), source: item.source || "samling" };
+      return { id: String(index + 1), row: index + 1, text: String(item || "").trim(), source: "samling" };
+    })
     .filter(card => card.text.length > 0);
 
   if (!deck.length) {
@@ -558,7 +610,7 @@ function renderCurrent(extraClass = "") {
 }
 
 function renderNext() {
-  if (!next) return;
+  if (!next) { if (els.nextCardText) els.nextCardText.textContent = ""; return; }
   els.nextCard.className = `card previewCard ${next.styleClass} ${next.sizeClass} ${next.toneClass} ${next.posterMode ? "posterMode" : ""}`;
   els.nextVisualBadge.textContent = next.badge;
   els.nextCardText.innerHTML = renderCardText(next.card.text, next.highlightWords);
@@ -1078,5 +1130,38 @@ function resizeImageFileToDataUrl(file, maxSize = 600, quality = 0.76) {
   });
 }
 
+
+
+
+// ---- v9.2 helpers ----
+let pendingReviewRows = [];
+let pendingReviewSource = "samling";
+function openSettings(){ updateImageStatus(); els.settingsModal.classList.remove("hidden"); }
+function closeSettings(){ els.settingsModal.classList.add("hidden"); }
+function openSheetModal(){ closeSettings(); els.sheetUrlInput.value = els.csvUrl.value || ""; els.sheetModal.classList.remove("hidden"); setTimeout(()=>els.sheetUrlInput.focus(),30); }
+function closeSheetModal(){ els.sheetModal.classList.add("hidden"); }
+async function addSheetCollection(reviewFirst){ const rawUrl=els.sheetUrlInput.value.trim(); if(!rawUrl){alert("Klistra in en länk.");return;} try{ const rows=await fetchRowsFromUrl(rawUrl); closeSheetModal(); if(reviewFirst) openReviewModal(rows, shortDeckName(rawUrl)); else { await addRowsToLibrary(rows, shortDeckName(rawUrl)); showToast(`📚 ${rows.length} kort tillagda. Biblioteket innehåller ${deck.length} minnen.`); } }catch(err){alert(err.message||String(err));} }
+async function fetchRowsFromUrl(rawUrl){ const csvUrl=normalizeCsvUrl(rawUrl); const response=await fetch(csvUrl); if(!response.ok) throw new Error(`Kunde inte ladda datan (${response.status}). Testa lokal CSV-fil.`); const rawText=await response.text(); if(looksLikeHtml(rawText)) throw new Error("Det verkar vara en webbsida, inte CSV-data."); const parsed=parseAndCleanCsv(rawText); if(!parsed.rows.length) throw new Error("Hittade inga användbara kort."); return parsed.rows; }
+function openPasteModal(){ closeSettings(); els.pasteInput.value=""; els.pasteModal.classList.remove("hidden"); setTimeout(()=>els.pasteInput.focus(),30); }
+function closePasteModal(){ els.pasteModal.classList.add("hidden"); }
+function reviewPastedNotes(){ const rows=chunkRawNotes(els.pasteInput.value); if(!rows.length){alert("Hittade inga kortförslag.");return;} closePasteModal(); openReviewModal(rows,"anteckningar"); }
+function openReviewModal(rows,source){ pendingReviewRows=rows.map(x=>String(x||"").trim()).filter(Boolean); pendingReviewSource=source||"samling"; renderReviewCards(); els.reviewModal.classList.remove("hidden"); }
+function closeReviewModal(){ els.reviewModal.classList.add("hidden"); pendingReviewRows=[]; }
+function renderReviewCards(){ els.reviewCards.innerHTML=""; els.reviewSummary.textContent=`${pendingReviewRows.length} kort från ${pendingReviewSource}`; pendingReviewRows.forEach((row,index)=>{ const art=document.createElement("article"); art.className="reviewCard"; const ta=document.createElement("textarea"); ta.value=row; ta.addEventListener("input",()=>{pendingReviewRows[index]=ta.value.trim();}); const tools=document.createElement("div"); tools.className="reviewTools"; const b=(label,fn)=>{const btn=document.createElement("button"); btn.type="button"; btn.textContent=label; btn.onclick=fn; return btn;}; tools.append(b("Splitta",()=>{const parts=pendingReviewRows[index].split("\n").map(x=>x.trim()).filter(Boolean); if(parts.length>1){pendingReviewRows.splice(index,1,...parts);renderReviewCards();}}), b("+ före",()=>{if(index>0){pendingReviewRows[index-1]=`${pendingReviewRows[index-1]}\n${pendingReviewRows[index]}`.trim();pendingReviewRows.splice(index,1);renderReviewCards();}}), b("+ nästa",()=>{if(index<pendingReviewRows.length-1){pendingReviewRows[index]=`${pendingReviewRows[index]}\n${pendingReviewRows[index+1]}`.trim();pendingReviewRows.splice(index+1,1);renderReviewCards();}}), b("Ta bort",()=>{pendingReviewRows.splice(index,1);renderReviewCards();})); art.append(ta,tools); els.reviewCards.appendChild(art); }); }
+async function commitReviewRows(){ const rows=pendingReviewRows.map(x=>x.trim()).filter(Boolean); if(!rows.length)return; await addRowsToLibrary(rows,pendingReviewSource); closeReviewModal(); showToast(`📚 ${rows.length} kort tillagda. Biblioteket innehåller ${deck.length} minnen.`); }
+async function addRowsToLibrary(rows,sourceName){ const start=deck.length; const added=rows.map((text,i)=>({id:createCardId(sourceName,start+i+1,text),row:start+i+1,text:String(text||"").trim(),source:sourceName||"samling"})).filter(c=>c.text); deck=[...deck,...added]; deckKey="scrollwise:local-library"; await saveLibraryToIndexedDb(deck,deckKey,`Lokalt bibliotek · ${deck.length} kort`,"local-library"); localStorage.setItem("scrollwise:hasLocalLibrary","1"); els.setup.classList.add("hidden"); els.feed.classList.remove("hidden"); els.deckInfo.textContent=`Lokalt bibliotek · ${deck.length} kort`; if(!current&&deck.length){current=makeVisualCard(pickWeightedRandomCard());next=makeVisualCard(pickWeightedRandomCard(current.card.id));renderCurrent();renderNext();markSeen(current.card.id);} }
+function createCardId(sourceName,number,text){let base=`${sourceName||"samling"}:${number}:${String(text).slice(0,24)}`,h=0;for(let i=0;i<base.length;i++){h=((h<<5)-h)+base.charCodeAt(i);h|=0;}return `card-${number}-${Math.abs(h)}`;}
+function chunkRawNotes(raw){const lines=String(raw||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n").map(cleanRawNoteLine);const out=[];let cur=[];for(const line of lines){if(!line.text){flush();continue;} if(looksLikeNoteHeading(line.text)){flush();cur.push(line.text);continue;} if(line.wasBullet&&cur.length>=6)flush();cur.push(line.text);if(line.wasBullet&&cur.length===1&&line.text.length>150)flush();}flush();return out;function flush(){const text=cur.join("\n").trim();if(text)out.push(text);cur=[];}}
+function cleanRawNoteLine(line){let text=String(line||"").trim();const m=text.match(/^([•●▪▫◦‣⁃*-]|\d+[.)]|[a-zA-ZåäöÅÄÖ][.)])\s+/);if(m)text=text.replace(/^([•●▪▫◦‣⁃*-]|\d+[.)]|[a-zA-ZåäöÅÄÖ][.)])\s+/,"").trim();return {text,wasBullet:Boolean(m)};}
+function looksLikeNoteHeading(text){const t=text.trim();if(t.length>70)return false;if(/[.!?]$/.test(t))return false;if(t.includes(":")&&t.length<80)return true;const words=t.split(/\s+/).filter(Boolean);if(words.length<=4)return true;if(/[-/–—]/.test(t)&&words.length<=7)return true;return false;}
+function openFixModal(){ closeSettings(); if(!current)return; els.fixText.value=current.card.text; els.fixModal.classList.remove("hidden"); setTimeout(()=>els.fixText.focus(),30); }
+function closeFixModal(){ els.fixModal.classList.add("hidden"); }
+async function saveFixedCard(){ if(!current)return; current.card.text=els.fixText.value.trim(); const idx=deck.findIndex(c=>c.id===current.card.id); if(idx>=0)deck[idx].text=current.card.text; await persistCurrentDeck(); renderCurrent(); closeFixModal(); showToast("Kortet uppdaterat."); }
+async function mergeCurrentCard(direction){ if(!current)return; const idx=deck.findIndex(c=>c.id===current.card.id); const oi=direction==="prev"?idx-1:idx+1; if(idx<0||oi<0||oi>=deck.length){showToast(direction==="prev"?"Det finns inget föregående kort.":"Det finns inget nästa kort.");return;} const first=direction==="prev"?deck[oi]:deck[idx]; const second=direction==="prev"?deck[idx]:deck[oi]; const merged=`${first.text}\n${second.text}`.trim(); if(!confirm(`Slå ihop korten så här?\n\n${merged.slice(0,700)}`))return; first.text=merged; deck.splice(direction==="prev"?idx:oi,1); current=makeVisualCard(first); next=deck.length>1?makeVisualCard(pickWeightedRandomCard(current.card.id)):null; previous=null; await persistCurrentDeck(); renderCurrent(); renderNext(); updatePrevButton(); closeFixModal(); showToast("Korten slogs ihop."); }
+async function deleteCurrentCard(){ if(!current)return; if(!confirm("Ta bort det här kortet från biblioteket?"))return; const idx=deck.findIndex(c=>c.id===current.card.id); if(idx>=0)deck.splice(idx,1); if(!deck.length){current=null;next=null;previous=null;closeFixModal();showSetup();return;} current=makeVisualCard(pickWeightedRandomCard()); next=deck.length>1?makeVisualCard(pickWeightedRandomCard(current.card.id)):null; previous=null; await persistCurrentDeck(); renderCurrent(); renderNext(); updatePrevButton(); closeFixModal(); showToast("Kortet togs bort."); }
+async function persistCurrentDeck(){ await saveLibraryToIndexedDb(deck,"scrollwise:local-library",`Lokalt bibliotek · ${deck.length} kort`,"local-library"); els.deckInfo.textContent=`Lokalt bibliotek · ${deck.length} kort`; }
+async function backupFullLibrary(){ try{const library=await idbGet("library");const images=await idbGet("userImages");const payload={app:"Scrollwise",version:"v9.2",exportedAt:new Date().toISOString(),library,images:images||[],memory:getMemoryStore()};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`scrollwise-library-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);}catch(err){alert(err.message||String(err));}}
+async function restoreFullLibrary(event){const file=event.target.files?.[0];if(!file)return;try{const payload=JSON.parse(await file.text());if(!payload||payload.app!=="Scrollwise")throw new Error("Det där ser inte ut som en Scrollwise-säkerhetskopia.");if(payload.library){await idbSet("library",payload.library);localStorage.setItem("scrollwise:hasLocalLibrary","1");loadDeckFromRows(payload.library.rows||[],payload.library.deckKey||"scrollwise:restored",payload.library.label||"Återställt bibliotek");} if(Array.isArray(payload.images)){userImages=payload.images.slice(-100);await idbSet("userImages",userImages);updateImageStatus();} if(payload.memory)setMemoryStore({...getMemoryStore(),...payload.memory});closeSettings();showToast("Biblioteket är återställt.");}catch(err){alert(err.message||String(err));}finally{event.target.value="";}}
+function showToast(message){if(!els.toast){alert(message);return;}els.toast.textContent=message;els.toast.classList.remove("hidden");clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>els.toast.classList.add("hidden"),2500);}
 
 window.addEventListener("beforeunload", releaseUserImages);

@@ -53,11 +53,8 @@
       </header>
 
       <div class="feedTools">
-        <button id="pickImagesBtnFeed" class="ghost" type="button">＋ bilder</button>
-        <button id="exportStateBtn" class="ghost" type="button">⇩ export</button>
-        <button id="importStateBtn" class="ghost" type="button">⇧ import</button>
-        <input id="stateFileInput" class="hiddenInput" type="file" accept=".json,application/json" />
         <span id="imageStatusFeed">stock-fragment</span>
+        <span id="libraryStatusFeed"></span>
       </div>
 
       <div id="cardStage" class="cardStage">
@@ -83,11 +80,11 @@
         </article>
       </div>
 
-      <footer class="actions">
-        <button id="lessBtn" title="Visa mer sällan">← mer sällan</button>
-        <button id="prevBtn" title="Tillbaka ett kort">↓ tillbaka</button>
-        <button id="nextBtn" title="Nästa kort">↑ nästa</button>
-        <button id="starBtn" title="Stjärnmarkera">★ oftare</button>
+      <footer class="actions compactActions">
+        <button id="prevBtn" class="bottomIcon" title="Tillbaka ett kort">←</button>
+        <button id="starBtn" class="bottomIcon" title="Visa oftare">★</button>
+        <button id="nextBtn" class="bottomIcon" title="Nästa kort">→</button>
+        <button id="settingsBtn" class="bottomIcon" title="Inställningar">⚙</button>
       </footer>
     </section>
   </main>
@@ -104,6 +101,30 @@
       </div>
     </div>
   </div>
+
+
+  <div id="settingsModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalBox settingsBox">
+      <div class="settingsHeader"><h2>Scrollwise</h2><button id="closeSettingsBtn" class="smallRound" type="button">×</button></div>
+      <section class="settingsSection"><h3>＋ Lägg till samling</h3><div class="settingsGrid">
+        <button id="pasteNotesBtn" class="settingsAction" type="button">📄 Anteckningar</button>
+        <button id="settingsSheetBtn" class="settingsAction" type="button">☁ Google Sheet</button>
+        <button id="settingsCsvBtn" class="settingsAction" type="button">📁 CSV-fil</button>
+      </div></section>
+      <section class="settingsSection"><h3>📷 Bildminnen</h3><button id="settingsImagesBtn" class="settingsAction wide" type="button"><span id="settingsImageCount">0 / 100 sparade</span></button></section>
+      <section class="settingsSection"><h3>Bibliotek</h3>
+        <button id="fixCardBtn" class="settingsAction wide" type="button">🛠 Fixa aktuellt kort</button>
+        <button id="backupLibraryBtn" class="settingsAction wide" type="button">⇩ Säkerhetskopiera bibliotek</button>
+        <button id="restoreLibraryBtn" class="settingsAction wide" type="button">⇧ Återställ bibliotek</button>
+        <input id="restoreFileInput" class="hiddenInput" type="file" accept=".json,application/json" />
+      </section>
+    </div>
+  </div>
+  <div id="sheetModal" class="modal hidden" role="dialog" aria-modal="true"><div class="modalBox"><h2>Lägg till Google Sheet</h2><p class="modalHelp">Klistra in Google Sheets- eller CSV-länk.</p><input id="sheetUrlInput" class="modalInput" type="url" placeholder="https://docs.google.com/spreadsheets/..." /><div class="modalActions"><button id="sheetAddDirectBtn">Lägg till direkt</button><button id="sheetReviewBtn" class="secondary">Granska först</button><button id="sheetCancelBtn" class="secondary">Avbryt</button></div></div></div>
+  <div id="pasteModal" class="modal hidden" role="dialog" aria-modal="true"><div class="modalBox largeBox"><h2>Klistra in anteckningar</h2><p class="modalHelp">Klistra in råtext. Du får granska korten innan de läggs till.</p><textarea id="pasteInput" placeholder="Klistra in anteckningar här…"></textarea><div class="modalActions"><button id="pasteSuggestBtn">Föreslå kort</button><button id="pasteCancelBtn" class="secondary">Avbryt</button></div></div></div>
+  <div id="reviewModal" class="modal hidden" role="dialog" aria-modal="true"><div class="modalBox largeBox"><h2 id="reviewTitle">Granska kort</h2><p id="reviewSummary" class="modalHelp"></p><div id="reviewCards" class="reviewCards"></div><div class="modalActions stickyActions"><button id="reviewAddBtn">Lägg till</button><button id="reviewCancelBtn" class="secondary">Avbryt</button></div></div></div>
+  <div id="fixModal" class="modal hidden" role="dialog" aria-modal="true"><div class="modalBox"><h2>Fixa skav</h2><p class="modalHelp">Laga bara det som skaver och fortsätt skrolla.</p><textarea id="fixText"></textarea><div class="modalActions"><button id="fixSaveBtn">Spara text</button><button id="mergePrevBtn" class="secondary">⬆ Slå ihop med föregående</button><button id="mergeNextBtn" class="secondary">⬇ Slå ihop med nästa</button><button id="deleteCardBtn" class="secondary">Ta bort kort</button><button id="fixCancelBtn" class="secondary">Stäng</button></div></div></div>
+  <div id="toast" class="toast hidden"></div>
 
   <script src="app.js"></script>
 </body>
