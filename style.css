@@ -1573,3 +1573,44 @@ body::after {
   color: rgba(66, 52, 37, 0.66) !important;
   text-decoration: none !important;
 }
+
+
+/* v11.4 — final evening polish */
+.watermarkAppIcon {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 5px;
+  opacity: 0.52 !important;
+  filter: saturate(0.72) contrast(0.86) brightness(1.02) !important;
+  mix-blend-mode: multiply;
+  transform: translateY(-0.5px);
+}
+
+.stampWithIcon .watermarkText {
+  color: rgba(66, 52, 37, 0.48) !important;
+  letter-spacing: 0.22em !important;
+}
+
+.brandStamp.stampWithIcon {
+  gap: 7px !important;
+  background: rgba(255,248,226,0.08) !important;
+}
+
+.makerAppIcon {
+  width: 78px !important;
+  height: 78px !important;
+  opacity: 0.86 !important;
+  filter: saturate(0.82) contrast(0.94) brightness(0.98) !important;
+}
+
+.makerTitleStamp {
+  color: rgba(66,52,37,0.48) !important;
+}
+
+.makerSub {
+  color: rgba(93,75,52,0.42) !important;
+}
+
+.makerText {
+  color: rgba(66,52,37,0.48) !important;
+}
