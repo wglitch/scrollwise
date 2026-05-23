@@ -1001,3 +1001,94 @@ body::after {
   left: -9999px !important;
   top: auto !important;
 }
+
+
+/* v10.2 — långsam kameraåkning över arkivbord */
+:root {
+  --desk-a: #ddd1b7;
+  --desk-b: #b7ad90;
+  --desk-c: #536755;
+  --desk-d: #8d6b4b;
+  --desk-e: #efe3cc;
+  --desk-x1: 18%;
+  --desk-y1: 18%;
+  --desk-x2: 82%;
+  --desk-y2: 76%;
+  --desk-rot-a: -3deg;
+  --desk-rot-b: 4deg;
+}
+
+html,
+body {
+  background:
+    radial-gradient(circle at var(--desk-x1) var(--desk-y1), rgba(83,103,85,0.22), transparent 34%),
+    radial-gradient(circle at var(--desk-x2) var(--desk-y2), rgba(141,107,75,0.20), transparent 38%),
+    radial-gradient(circle at 52% 46%, rgba(239,227,204,0.62), transparent 44%),
+    linear-gradient(90deg, rgba(65, 52, 35, 0.042) 1px, transparent 1px) 0 0 / 38px 38px,
+    linear-gradient(0deg, rgba(65, 52, 35, 0.030) 1px, transparent 1px) 0 0 / 38px 38px,
+    linear-gradient(135deg, var(--desk-a), var(--desk-b)) !important;
+  transition: background 1400ms ease;
+}
+
+body::before {
+  width: min(520px, 92vw) !important;
+  height: 70vh !important;
+  left: 50% !important;
+  top: 13vh !important;
+  transform: translateX(-55%) rotate(var(--desk-rot-a)) !important;
+  border-radius: 28px !important;
+  background:
+    linear-gradient(135deg, rgba(255,248,226,0.30), rgba(226,211,180,0.13)),
+    repeating-linear-gradient(90deg, rgba(70,54,33,0.025) 0 1px, transparent 1px 24px) !important;
+  border: 1px solid rgba(80, 62, 39, 0.055) !important;
+  box-shadow:
+    0 18px 46px rgba(70, 54, 33, 0.075),
+    inset 0 0 0 1px rgba(255,255,255,0.18) !important;
+  transition: transform 1400ms ease, background 1400ms ease;
+}
+
+body::after {
+  width: min(470px, 84vw) !important;
+  height: 62vh !important;
+  left: 50% !important;
+  top: 20vh !important;
+  transform: translateX(-42%) rotate(var(--desk-rot-b)) !important;
+  border-radius: 24px !important;
+  background:
+    linear-gradient(135deg, rgba(74, 94, 74, 0.18), rgba(255, 246, 222, 0.10)),
+    linear-gradient(90deg, rgba(255,255,255,0.08), transparent) !important;
+  border: 1px solid rgba(54, 76, 56, 0.055) !important;
+  box-shadow:
+    0 16px 42px rgba(58, 46, 30, 0.060),
+    inset 0 0 0 1px rgba(255,255,255,0.11) !important;
+  transition: transform 1400ms ease, background 1400ms ease;
+}
+
+.cardStage::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  width: min(520px, 92vw);
+  height: min(72vh, 660px);
+  border-radius: 36px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,0.13), transparent 28%),
+    linear-gradient(135deg, rgba(69, 88, 70, 0.16), rgba(118, 91, 61, 0.08));
+  filter: blur(7px);
+  opacity: 0.72;
+  transform: rotate(-1.2deg);
+  pointer-events: none;
+  transition: background 1400ms ease, opacity 1400ms ease;
+}
+
+.card {
+  z-index: 1;
+}
+
+.activeCard {
+  z-index: 3;
+}
+
+.cardPaper {
+  border-color: rgba(92, 70, 43, 0.16) !important;
+}

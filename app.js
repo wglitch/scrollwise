@@ -609,6 +609,7 @@ function makeImageSeed(card) {
 }
 
 function renderCurrent(extraClass = "") {
+  if (typeof updateAmbientBackground === "function") updateAmbientBackground();
   const memory = getCardMemory(current.card.id);
   els.card.className = `card activeCard ${current.styleClass} ${current.sizeClass} ${current.toneClass} ${current.posterMode ? "posterMode" : ""} ${extraClass}`.trim();
   els.visualBadge.textContent = current.badge;
@@ -1174,5 +1175,63 @@ async function persistCurrentDeck(){ await saveLibraryToIndexedDb(deck,"scrollwi
 async function backupFullLibrary(){ try{const library=await idbGet("library");const images=await idbGet("userImages");const payload={app:"Scrollwise",version:"v9.2",exportedAt:new Date().toISOString(),library,images:images||[],memory:getMemoryStore()};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`scrollwise-library-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);}catch(err){alert(err.message||String(err));}}
 async function restoreFullLibrary(event){const file=event.target.files?.[0];if(!file)return;try{const payload=JSON.parse(await file.text());if(!payload||payload.app!=="Scrollwise")throw new Error("Det där ser inte ut som en Scrollwise-säkerhetskopia.");if(payload.library){await idbSet("library",payload.library);localStorage.setItem("scrollwise:hasLocalLibrary","1");loadDeckFromRows(payload.library.rows||[],payload.library.deckKey||"scrollwise:restored",payload.library.label||"Återställt bibliotek");} if(Array.isArray(payload.images)){userImages=payload.images.slice(-100);await idbSet("userImages",userImages);updateImageStatus();} if(payload.memory)setMemoryStore({...getMemoryStore(),...payload.memory});closeSettings();showToast("Biblioteket är återställt.");}catch(err){alert(err.message||String(err));}finally{event.target.value="";}}
 function showToast(message){if(!els.toast){alert(message);return;}els.toast.textContent=message;els.toast.classList.remove("hidden");clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>els.toast.classList.add("hidden"),2500);}
+
+
+// v10.2 ambient background drift.
+const BG_MOODS = [
+  { a: "#ddd1b7", b: "#b9ad91", c: "#536755", d: "#8d6b4b", e: "#efe3cc" },
+  { a: "#cfd7c6", b: "#a8b19a", c: "#455d4d", d: "#8a7657", e: "#e9e0ca" },
+  { a: "#d7c0a0", b: "#a88763", c: "#5d6f58", d: "#76543a", e: "#f0dfc2" },
+  { a: "#e0d5bd", b: "#c0b291", c: "#65735d", d: "#9a7654", e: "#f4ead5" },
+];
+
+let bgStep = Number(localStorage.getItem("scrollwise:bgStep") || "0");
+
+function updateAmbientBackground() {
+  bgStep += 0.18;
+  localStorage.setItem("scrollwise:bgStep", String(bgStep));
+
+  const baseIndex = Math.floor(bgStep / 8) % BG_MOODS.length;
+  const nextIndex = (baseIndex + 1) % BG_MOODS.length;
+  const t = (bgStep % 8) / 8;
+  const currentMood = BG_MOODS[baseIndex];
+  const nextMood = BG_MOODS[nextIndex];
+
+  setCssColor("--desk-a", mixHex(currentMood.a, nextMood.a, t));
+  setCssColor("--desk-b", mixHex(currentMood.b, nextMood.b, t));
+  setCssColor("--desk-c", mixHex(currentMood.c, nextMood.c, t));
+  setCssColor("--desk-d", mixHex(currentMood.d, nextMood.d, t));
+  setCssColor("--desk-e", mixHex(currentMood.e, nextMood.e, t));
+
+  const phase = bgStep / 5;
+  document.documentElement.style.setProperty("--desk-x1", `${18 + Math.sin(phase) * 9}%`);
+  document.documentElement.style.setProperty("--desk-y1", `${18 + Math.cos(phase * 0.8) * 7}%`);
+  document.documentElement.style.setProperty("--desk-x2", `${80 + Math.cos(phase * 0.72) * 8}%`);
+  document.documentElement.style.setProperty("--desk-y2", `${74 + Math.sin(phase * 0.63) * 8}%`);
+  document.documentElement.style.setProperty("--desk-rot-a", `${-3 + Math.sin(phase) * 1.2}deg`);
+  document.documentElement.style.setProperty("--desk-rot-b", `${4 + Math.cos(phase * 0.9) * 1.2}deg`);
+}
+
+function setCssColor(name, value) {
+  document.documentElement.style.setProperty(name, value);
+}
+
+function mixHex(hexA, hexB, t) {
+  const a = parseHex(hexA);
+  const b = parseHex(hexB);
+  const mixed = a.map((channel, i) => Math.round(channel + (b[i] - channel) * t));
+  return `rgb(${mixed[0]}, ${mixed[1]}, ${mixed[2]})`;
+}
+
+function parseHex(hex) {
+  const clean = hex.replace("#", "");
+  return [
+    parseInt(clean.slice(0, 2), 16),
+    parseInt(clean.slice(2, 4), 16),
+    parseInt(clean.slice(4, 6), 16),
+  ];
+}
+
+updateAmbientBackground();
 
 window.addEventListener("beforeunload", releaseUserImages);
