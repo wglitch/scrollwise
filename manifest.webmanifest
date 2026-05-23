@@ -1,0 +1,18 @@
+{
+  "name": "Scrollwise",
+  "short_name": "Scrollwise",
+  "description": "Din egenvalda scroll genom minnets bibliotek.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#25170f",
+  "theme_color": "#6a4428",
+  "icons": [
+    {
+      "src": "icons/scrollwise-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
