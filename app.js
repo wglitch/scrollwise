@@ -85,6 +85,7 @@ const els = {
   pasteSuggestBtn: document.querySelector("#pasteSuggestBtn"),
   pasteCancelBtn: document.querySelector("#pasteCancelBtn"),
   reviewModal: document.querySelector("#reviewModal"),
+  reviewTitle: document.querySelector("#reviewTitle"),
   reviewSummary: document.querySelector("#reviewSummary"),
   reviewCards: document.querySelector("#reviewCards"),
   reviewAddBtn: document.querySelector("#reviewAddBtn"),
@@ -92,6 +93,7 @@ const els = {
   fixCardBtn: document.querySelector("#fixCardBtn"),
   fixModal: document.querySelector("#fixModal"),
   fixText: document.querySelector("#fixText"),
+  mergePreview: document.querySelector("#mergePreview"),
   fixSaveBtn: document.querySelector("#fixSaveBtn"),
   mergePrevBtn: document.querySelector("#mergePrevBtn"),
   mergeNextBtn: document.querySelector("#mergeNextBtn"),
@@ -124,7 +126,7 @@ function init() {
   els.csvFileInput?.addEventListener("change", handleLocalCsvPick);
   els.demoBtn.addEventListener("click", () => loadDeckFromRows(DEMO_CARDS, "scrollwise:demo", "Demofeed"));
   els.pickImagesBtn.addEventListener("click", () => els.imageInput.click());
-  els.pickImagesBtnFeed.addEventListener("click", () => els.imageInput.click());
+  els.pickImagesBtnFeed?.addEventListener("click", () => els.imageInput.click());
   els.imageInput.addEventListener("change", handleImagePick);
   els.exportStateBtn?.addEventListener("click", exportScrollwiseState);
   els.importStateBtn?.addEventListener("click", () => els.stateFileInput.click());
@@ -137,8 +139,8 @@ function init() {
     if (event.target === els.noteModal) closeNoteModal();
   });
 
-  els.backBtn.addEventListener("click", showSetup);
-  els.resetBtn.addEventListener("click", resetLocalMemory);
+  els.backBtn?.addEventListener("click", showSetup);
+  els.resetBtn?.addEventListener("click", resetLocalMemory);
 
   els.nextBtn.addEventListener("click", () => advance("up"));
   els.prevBtn.addEventListener("click", goBack);
@@ -146,8 +148,8 @@ function init() {
   els.settingsBtn?.addEventListener("click", openSettings);
   els.closeSettingsBtn?.addEventListener("click", closeSettings);
   els.settingsModal?.addEventListener("click", e => { if (e.target === els.settingsModal) closeSettings(); });
-  els.settingsCsvBtn?.addEventListener("click", () => { closeSettings(); els.csvFileInput.click(); });
-  els.settingsImagesBtn?.addEventListener("click", () => { closeSettings(); els.imageInput.click(); });
+  els.settingsCsvBtn?.addEventListener("click", () => { closeSettings(); els.csvFileInput?.click(); });
+  els.settingsImagesBtn?.addEventListener("click", () => { closeSettings(); els.imageInput?.click(); });
   els.settingsSheetBtn?.addEventListener("click", openSheetModal);
   els.sheetCancelBtn?.addEventListener("click", closeSheetModal);
   els.sheetAddDirectBtn?.addEventListener("click", () => addSheetCollection(false));
@@ -238,8 +240,8 @@ function updateImageStatus(overrideText = null) {
     ? `${userImages.length} bildminnen sparade lokalt.`
     : "Inga egna bilder valda. Appen använder blekta stock-fragment.");
 
-  els.imageStatus.textContent = text;
-  els.imageStatusFeed.textContent = overrideText
+  if (els.imageStatus) els.imageStatus.textContent = text;
+  if (els.imageStatusFeed) els.imageStatusFeed.textContent = overrideText
     ? overrideText
     : userImages.length
       ? `${userImages.length}/100 bildminnen`
@@ -594,7 +596,16 @@ function makeImageSeed(card) {
     ["#7c5c47", "#e2cf9f", "#57412f"],
     ["#586b5a", "#d9c48e", "#7f4e31"],
   ];
-  return themes[Number(card.id) % themes.length];
+
+  const raw = String(card?.id ?? card?.row ?? card?.text ?? "0");
+  let hash = 0;
+
+  for (let i = 0; i < raw.length; i++) {
+    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+    hash |= 0;
+  }
+
+  return themes[Math.abs(hash) % themes.length];
 }
 
 function renderCurrent(extraClass = "") {
@@ -642,7 +653,7 @@ function applyImage(el, visualCard, memory) {
       url("${visualCard.userImageUrl}")
     `;
   } else {
-    const seed = visualCard.imageSeed;
+    const seed = visualCard.imageSeed || ["#8a5f34", "#d7bd83", "#5f3c28"];
     el.style.backgroundImage = `
       radial-gradient(circle at 35% 30%, rgba(255,255,255,0.65), transparent 18%),
       linear-gradient(135deg, ${seed[0]}, ${seed[1]} 48%, ${seed[2]})
