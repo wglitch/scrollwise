@@ -987,3 +987,17 @@ body::after {
     min-height: 460px !important;
   }
 }
+
+
+/* v10.1 crash fix: hidden JS compatibility nodes */
+.compatDeckInfo,
+.compatHidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  left: -9999px !important;
+  top: auto !important;
+}

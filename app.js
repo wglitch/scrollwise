@@ -496,7 +496,7 @@ function loadDeckFromRows(rows, key, label) {
     return;
   }
 
-  els.deckInfo.textContent = label.includes("kort") ? label : `${label} · ${deck.length} kort`;
+  if (els.deckInfo) if (els.deckInfo) els.deckInfo.textContent = label.includes("kort") ? label : `${label} · ${deck.length} kort`;
   els.setup.classList.add("hidden");
   els.feed.classList.remove("hidden");
 
