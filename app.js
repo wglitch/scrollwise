@@ -115,6 +115,7 @@ function init() {
   els.card.addEventListener("pointercancel", () => pointerStart = null);
 
   updateImageStatus();
+  bootFromIndexedDb();
 
   const urlDeck = new URLSearchParams(location.search).get("deck");
   if (urlDeck) {
@@ -123,45 +124,68 @@ function init() {
   }
 }
 
-function handleImagePick(event) {
-  releaseUserImages();
-
+async function handleImagePick(event) {
   const files = Array.from(event.target.files || [])
     .filter(file => file.type.startsWith("image/"));
 
-  userImages = files.map((file, index) => ({
-    id: `${file.name}-${file.size}-${index}`,
-    name: file.name,
-    url: URL.createObjectURL(file),
-  }));
+  if (!files.length) return;
 
-  updateImageStatus();
+  try {
+    updateImageStatus("Bearbetar bildminnen…");
 
-  if (current) {
-    current = refreshVisualCardImage(current);
-    renderCurrent();
-  }
+    const processed = [];
 
-  if (next) {
-    next = refreshVisualCardImage(next);
-    renderNext();
+    for (const [index, file] of files.entries()) {
+      const dataUrl = await resizeImageFileToDataUrl(file, 600, 0.76);
+      processed.push({
+        id: `${file.name}-${file.size}-${file.lastModified}-${index}`,
+        name: file.name,
+        url: dataUrl,
+        stored: true,
+      });
+    }
+
+    userImages = processed;
+    await idbSet("userImages", userImages);
+
+    updateImageStatus();
+
+    if (current) {
+      current = refreshVisualCardImage(current);
+      renderCurrent();
+    }
+
+    if (next) {
+      next = refreshVisualCardImage(next);
+      renderNext();
+    }
+
+    event.target.value = "";
+  } catch (err) {
+    alert("Kunde inte spara bilderna: " + (err.message || String(err)));
+    updateImageStatus();
   }
 }
 
 function releaseUserImages() {
-  userImages.forEach(image => URL.revokeObjectURL(image.url));
-  userImages = [];
+  userImages.forEach(image => {
+    if (image.url && image.url.startsWith("blob:")) {
+      URL.revokeObjectURL(image.url);
+    }
+  });
 }
 
-function updateImageStatus() {
-  const text = userImages.length
-    ? `${userImages.length} bildminnen valda för den här sessionen.`
-    : "Inga egna bilder valda. Appen använder blekta stock-fragment.";
+function updateImageStatus(overrideText = null) {
+  const text = overrideText || (userImages.length
+    ? `${userImages.length} bildminnen sparade lokalt.`
+    : "Inga egna bilder valda. Appen använder blekta stock-fragment.");
 
   els.imageStatus.textContent = text;
-  els.imageStatusFeed.textContent = userImages.length
-    ? `${userImages.length} bildminnen`
-    : "stock-fragment";
+  els.imageStatusFeed.textContent = overrideText
+    ? overrideText
+    : userImages.length
+      ? `${userImages.length} bildminnen`
+      : "stock-fragment";
 }
 
 
@@ -195,11 +219,16 @@ async function handleLocalCsvPick(event) {
       ? ` · ${parsed.ignored} skräprader ignorerades`
       : "";
 
+    const savedDeckKey = makeDeckKey(`local:${file.name}:${file.size}:${file.lastModified}`);
+    const savedLabel = `${file.name} · ${parsed.rows.length} kort${ignoredText}`;
+
     loadDeckFromRows(
       parsed.rows,
-      makeDeckKey(`local:${file.name}:${file.size}:${file.lastModified}`),
-      `${file.name} · ${parsed.rows.length} kort${ignoredText}`
+      savedDeckKey,
+      savedLabel
     );
+
+    saveLibraryToIndexedDb(parsed.rows, savedDeckKey, savedLabel, `local:${file.name}`);
 
     // Gör det möjligt att välja samma fil igen senare.
     event.target.value = "";
@@ -257,11 +286,16 @@ async function loadFromInput() {
       ? ` · ${parsed.ignored} skräprader ignorerades`
       : "";
 
+    const savedDeckKey = makeDeckKey(csvUrl);
+    const savedLabel = `${shortDeckName(rawUrl)} · ${parsed.rows.length} kort${ignoredText}`;
+
     loadDeckFromRows(
       parsed.rows,
-      makeDeckKey(csvUrl),
-      `${shortDeckName(rawUrl)} · ${parsed.rows.length} kort${ignoredText}`
+      savedDeckKey,
+      savedLabel
     );
+
+    saveLibraryToIndexedDb(parsed.rows, savedDeckKey, savedLabel, csvUrl);
   } catch (err) {
     alert(err.message);
   } finally {
@@ -883,5 +917,128 @@ async function importScrollwiseState(event) {
     event.target.value = "";
   }
 }
+
+
+// ---- IndexedDB persistence layer ----
+
+const SW_DB_NAME = "scrollwise-db";
+const SW_DB_VERSION = 1;
+const SW_STORE = "kv";
+
+function openScrollwiseDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(SW_DB_NAME, SW_DB_VERSION);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(SW_STORE)) {
+        db.createObjectStore(SW_STORE);
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function idbGet(key) {
+  const db = await openScrollwiseDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(SW_STORE, "readonly");
+    const store = tx.objectStore(SW_STORE);
+    const request = store.get(key);
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function idbSet(key, value) {
+  const db = await openScrollwiseDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(SW_STORE, "readwrite");
+    const store = tx.objectStore(SW_STORE);
+    const request = store.put(value, key);
+
+    request.onsuccess = () => resolve(true);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveLibraryToIndexedDb(rows, savedDeckKey, label, source) {
+  try {
+    await idbSet("library", {
+      rows,
+      deckKey: savedDeckKey,
+      label,
+      source,
+      savedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn("Kunde inte spara biblioteket i IndexedDB", err);
+  }
+}
+
+async function bootFromIndexedDb() {
+  // URL-parametern ?deck= ska vinna över lokal autostart.
+  if (new URLSearchParams(location.search).get("deck")) return;
+
+  try {
+    const [library, savedImages] = await Promise.all([
+      idbGet("library"),
+      idbGet("userImages"),
+    ]);
+
+    if (Array.isArray(savedImages) && savedImages.length) {
+      userImages = savedImages;
+      updateImageStatus();
+    }
+
+    if (library && Array.isArray(library.rows) && library.rows.length) {
+      loadDeckFromRows(
+        library.rows,
+        library.deckKey || "scrollwise:indexeddb",
+        library.label || `Lokalt bibliotek · ${library.rows.length} kort`
+      );
+    }
+  } catch (err) {
+    console.warn("Kunde inte autostarta från IndexedDB", err);
+  }
+}
+
+function resizeImageFileToDataUrl(file, maxSize = 600, quality = 0.76) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const width = Math.max(1, Math.round(img.width * scale));
+      const height = Math.max(1, Math.round(img.height * scale));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // JPEG är mindre och räcker för minnesfragment.
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Kunde inte läsa en av bilderna."));
+    };
+
+    img.src = objectUrl;
+  });
+}
+
 
 window.addEventListener("beforeunload", releaseUserImages);
