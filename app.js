@@ -79,6 +79,7 @@ let isAnimating = false;
 let userImages = [];
 
 init();
+window.addEventListener("DOMContentLoaded", bootFromIndexedDbIfNeeded);
 
 function init() {
   const savedUrl = localStorage.getItem("scrollwise:lastUrl");
@@ -115,7 +116,6 @@ function init() {
   els.card.addEventListener("pointercancel", () => pointerStart = null);
 
   updateImageStatus();
-  bootFromIndexedDb();
 
   const urlDeck = new URLSearchParams(location.search).get("deck");
   if (urlDeck) {
@@ -968,22 +968,32 @@ async function idbSet(key, value) {
 }
 
 async function saveLibraryToIndexedDb(rows, savedDeckKey, label, source) {
+  const library = {
+    rows,
+    deckKey: savedDeckKey,
+    label,
+    source,
+    savedAt: new Date().toISOString(),
+  };
+
   try {
-    await idbSet("library", {
-      rows,
-      deckKey: savedDeckKey,
-      label,
-      source,
-      savedAt: new Date().toISOString(),
-    });
+    await idbSet("library", library);
+    localStorage.setItem("scrollwise:hasLocalLibrary", "1");
+    localStorage.setItem("scrollwise:lastLocalDeckKey", savedDeckKey);
   } catch (err) {
     console.warn("Kunde inte spara biblioteket i IndexedDB", err);
+    // Fallback: spara även som vanlig localStorage om biblioteket är rimligt stort.
+    try {
+      localStorage.setItem("scrollwise:fallbackLibrary", JSON.stringify(library));
+      localStorage.setItem("scrollwise:hasLocalLibrary", "1");
+    } catch (fallbackErr) {
+      console.warn("Fallback-sparning misslyckades också", fallbackErr);
+    }
   }
 }
 
 async function bootFromIndexedDb() {
-  // URL-parametern ?deck= ska vinna över lokal autostart.
-  if (new URLSearchParams(location.search).get("deck")) return;
+  if (!localStorage.getItem("scrollwise:hasLocalLibrary")) return false;
 
   try {
     const [library, savedImages] = await Promise.all([
@@ -1002,10 +1012,38 @@ async function bootFromIndexedDb() {
         library.deckKey || "scrollwise:indexeddb",
         library.label || `Lokalt bibliotek · ${library.rows.length} kort`
       );
+      return true;
     }
   } catch (err) {
     console.warn("Kunde inte autostarta från IndexedDB", err);
   }
+
+  // Fallback om IndexedDB av någon anledning inte svarar.
+  try {
+    const fallback = JSON.parse(localStorage.getItem("scrollwise:fallbackLibrary") || "null");
+    if (fallback && Array.isArray(fallback.rows) && fallback.rows.length) {
+      loadDeckFromRows(
+        fallback.rows,
+        fallback.deckKey || "scrollwise:fallback",
+        fallback.label || `Lokalt bibliotek · ${fallback.rows.length} kort`
+      );
+      return true;
+    }
+  } catch (err) {
+    console.warn("Kunde inte läsa fallback-bibliotek", err);
+  }
+
+  return false;
+}
+
+async function bootFromIndexedDbIfNeeded() {
+  const urlDeck = new URLSearchParams(location.search).get("deck");
+  if (urlDeck) return;
+
+  // Om feed redan visas, gör inget.
+  if (!els.feed.classList.contains("hidden")) return;
+
+  await bootFromIndexedDb();
 }
 
 function resizeImageFileToDataUrl(file, maxSize = 600, quality = 0.76) {
